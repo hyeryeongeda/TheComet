@@ -24,9 +24,41 @@
           </p>
 
           <!-- 장르 -->
+          <!-- template의 장르 영역만 교체 -->
           <div class="chips" v-if="movie.genres?.length">
-            <span class="chip" v-for="g in movie.genres" :key="g.tmdb_id ?? g.id">
+            <button
+              class="chip"
+              v-for="g in movie.genres"
+              :key="g.tmdb_id ?? g.id"
+              type="button"
+              @click="goGenre(g.tmdb_id ?? g.id)"
+            >
               {{ g.name }}
+            </button>
+          </div>
+          <!-- 감독 -->
+          <div v-if="movie.directors?.length" class="chips">
+            <span class="chip chip-title">감독</span>
+            <span
+              class="chip"
+              v-for="p in movie.directors"
+              :key="p.tmdb_id"
+              @click="goPerson(p.tmdb_id)"
+            >
+              {{ p.name }}
+            </span>
+          </div>
+
+          <!-- 출연 -->
+          <div v-if="movie.cast?.length" class="chips">
+            <span class="chip chip-title">출연</span>
+            <span
+              class="chip"
+              v-for="p in movie.cast"
+              :key="p.tmdb_id"
+              @click="goPerson(p.tmdb_id)"
+            >
+              {{ p.name }}
             </span>
           </div>
 
@@ -67,7 +99,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router' 
 
 import {
   fetchMovieDetail,
@@ -82,7 +114,17 @@ import ReviewForm from '@/components/review/ReviewForm.vue'
 import ReviewList from '@/components/review/ReviewList.vue'
 
 const route = useRoute()
+const router = useRouter()
 const tmdbId = computed(() => route.params.tmdbId)
+
+// ✅ 장르 클릭 -> /movies?genre=XX 로 이동
+function goGenre(genreTmdbId) {
+  if (!genreTmdbId) return
+  router.push({
+    name: 'movies',
+    query: { genre: String(genreTmdbId), sort: 'popular', page: '1' },
+  })
+}
 
 const loading = ref(true)
 const movie = ref(null)
@@ -113,6 +155,9 @@ async function loadAll() {
   } finally {
     loading.value = false
   }
+}
+function goPerson(personTmdbId) {
+  router.push({ name: 'person-detail', params: { tmdbId: personTmdbId } })
 }
 
 async function reloadReviews() {
@@ -153,6 +198,8 @@ async function onUpdate({ reviewId, payload }) {
 
 onMounted(loadAll)
 watch(() => tmdbId.value, loadAll)
+
+
 </script>
 
 <style scoped>
@@ -199,8 +246,16 @@ watch(() => tmdbId.value, loadAll)
   font-weight: 600;
 }
 
+
+.chip:hover {
+  border-color: #cfcfcf;
+  background: #f5f5f5;
+}
+
+
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .chip {
+  cursor: pointer;
   padding: 6px 10px;
   border-radius: 999px;
   border: 1px solid #e7e7e7;
@@ -234,4 +289,20 @@ watch(() => tmdbId.value, loadAll)
   color: #666;
   margin-bottom: 12px;
 }
+
+.people { margin-top: 14px; display: grid; gap: 10px; }
+.people-row { display: grid; gap: 8px; }
+.people-label { font-weight: 900; color: #111; }
+.people-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.pchip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e7e7e7;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  color: #222;
+}
+.role { color: #777; font-weight: 700; margin-left: 4px; }
+
 </style>

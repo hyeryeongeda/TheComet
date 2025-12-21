@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     "accounts",
     "movies",
     "reviews",
-    # "reco",
+    "recommends",
 ]
 
 MIDDLEWARE = [
@@ -146,3 +146,6 @@ TMDB_API_KEY = os.getenv("TMDB_API_KEY", "")
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
 AUTH_USER_MODEL = "accounts.User"
+import os
+GMS_MODEL = os.getenv("GMS_MODEL", "gpt-4o-mini")  # 없으면 기본값
+GMS_KEY = os.getenv("GMS_KEY")

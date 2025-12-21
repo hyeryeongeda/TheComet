@@ -46,6 +46,8 @@ const routes = [
   },
 
   { path: '/:pathMatch(.*)*', name: 'notfound', component: () => import('@/views/NotFoundView.vue') },
+  { path: '/people/:tmdbId', name: 'person-detail', component: () => import('@/views/PersonDetailView.vue'), props: true },
+
 ]
 
 export default routes

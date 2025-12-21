@@ -1,6 +1,20 @@
-//frontend/src/api/comet.js
-
+// frontend/src/api/comet.js
 import api from './axios'
+
+// =========================
+// 공통: Authorization 헤더 (인터셉터로 이미 붙이면 이거 없어도 됨)
+// =========================
+function authConfig(extra = {}) {
+  const token = localStorage.getItem('access')
+  if (!token) return extra
+  return {
+    ...extra,
+    headers: {
+      ...(extra.headers || {}),
+      Authorization: `Bearer ${token}`,
+    },
+  }
+}
 
 // =========================
 // movies
@@ -11,7 +25,7 @@ export async function fetchHomeSections(page = 1) {
 }
 
 export async function fetchMovies(params = {}) {
-  // ✅ 백엔드가 /movies/list/ 임
+  // ✅ 백엔드가 /movies/list/
   const res = await api.get('/movies/list/', { params })
   return res.data
 }
@@ -21,7 +35,6 @@ export async function fetchGenres() {
   return res.data
 }
 
-
 export async function fetchMovieDetail(tmdbId) {
   const res = await api.get(`/movies/${tmdbId}/`)
   return res.data
@@ -29,6 +42,11 @@ export async function fetchMovieDetail(tmdbId) {
 
 export async function searchMulti(q, page = 1) {
   const res = await api.get('/movies/search/', { params: { q, page } })
+  return res.data
+}
+
+export async function fetchPersonDetail(tmdbId) {
+  const res = await api.get(`/movies/people/${tmdbId}/`)
   return res.data
 }
 
@@ -78,7 +96,6 @@ export async function login(payload) {
   return res.data
 }
 
-
 export async function fetchMe() {
   const res = await api.get('/auth/me/')
   return res.data
@@ -102,4 +119,46 @@ export async function fetchUserProfile(username) {
 export async function toggleFollow(username) {
   const res = await api.post(`/auth/users/${encodeURIComponent(username)}/follow/`)
   return res.data
+}
+
+// =========================
+// recommends (취향분석/추천)
+// =========================
+
+// 1) AI 챗봇(취향분석/맞춤추천 공용)
+// POST /recommends/chat/
+// ✅ AI 챗(취향분석/추천 AI 공용)
+export async function postTasteChat(payload) {
+  const { data } = await api.post('/recommends/ai/', payload, {
+    headers: authHeaders(),
+  })
+  return data
+}
+
+
+// 2) 장르 추천
+// GET /recommends/genres/
+export async function fetchGenreRecommends(params = {}) {
+  const res = await api.get('/recommends/genres/', authConfig({ params }))
+  return res.data
+}
+
+// 3) 인물 추천
+// GET /recommends/people/
+export async function fetchPersonRecommends(params = {}) {
+  const res = await api.get('/recommends/people/', authConfig({ params }))
+  return res.data
+}
+
+// 4) 유저 추천
+// GET /recommends/users/
+export async function fetchUserRecommends(params = {}) {
+  const res = await api.get('/recommends/users/', authConfig({ params }))
+  return res.data
+}
+
+
+function authHeaders() {
+  const token = localStorage.getItem('access')
+  return token ? { Authorization: `Bearer ${token}` } : {}
 }

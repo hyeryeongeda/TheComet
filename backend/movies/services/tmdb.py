@@ -1,11 +1,12 @@
-# backend/movies/services
-import os
+# backend/movies/services/tmdb.py
 import requests
+import time
 from datetime import datetime
 from django.conf import settings
 from django.db import transaction
 
 from movies.models import Movie, Genre, MovieGenre, Person, MovieCredit, HomeSectionEntry
+
 
 TMDB_BASE_URL = "https://api.themoviedb.org/3"
 
@@ -122,27 +123,38 @@ def sync_home_section(section_code: str, tmdb_path: str, pages=1, with_credits=T
     HomeSectionEntry.objects.filter(section=section_code).delete()
 
     rank = 1
+    seen_tmdb_ids = set()   # ✅ 중복 방지
+
     for page in range(1, pages + 1):
         data = _tmdb_get(tmdb_path, params={"page": page})
         results = data.get("results") or []
+
         for item in results:
             movie = upsert_movie_from_tmdb(item)
 
-            # 장르도 미리 DB에 저장(genre_id -> Genre는 별도 sync로 채움)
-            # 홈 sync에서는 genre_id만 연결. Genre 테이블은 genres endpoint로 먼저 채우는 걸 권장.
+            # ✅ 같은 섹션에 같은 영화가 또 나오면 스킵
+            if movie.tmdb_id in seen_tmdb_ids:
+                continue
+            seen_tmdb_ids.add(movie.tmdb_id)
+
             genre_ids = item.get("genre_ids") or []
             if Genre.objects.exists():
                 set_movie_genres(movie, genre_ids)
 
-            HomeSectionEntry.objects.create(section=section_code, movie=movie, rank=rank)
+            # ✅ create 대신 update_or_create (유니크 충돌 안전)
+            HomeSectionEntry.objects.update_or_create(
+                section=section_code,
+                movie=movie,
+                defaults={"rank": rank},
+            )
             rank += 1
 
             if with_credits:
                 try:
                     sync_movie_credits(movie, cast_limit=10)
                 except Exception:
-                    # 크레딧 실패가 전체를 망치면 안 됨
                     pass
+
 
 
 def fetch_and_sync_genre_master():
@@ -163,3 +175,60 @@ def fetch_movie_detail_and_update(movie: Movie):
     genres = detail.get("genres") or []
     upsert_genres(genres)
     set_movie_genres(movie, [g["id"] for g in genres])
+
+
+# backend/movies/services/tmdb.py
+
+import time
+from django.db import transaction
+from movies.models import Movie, Genre
+
+# ... (기존 코드 유지)
+
+@transaction.atomic
+def sync_bulk_movies(pages=25, sort_by="popularity.desc", with_credits=False, with_detail=False, sleep_sec=0.15):
+    """
+    TMDB discover/movie로 영화 다량 upsert
+    - pages=25 -> 500개(20개*25)
+    - with_credits: True면 크레딧까지 저장(요청 수 폭증하니 보통 False 추천)
+    - with_detail: True면 runtime/genres 보정까지 저장(역시 요청 수 증가)
+    """
+    total = 0
+    for page in range(1, pages + 1):
+        data = _tmdb_get(
+            "/discover/movie",
+            params={
+                "sort_by": sort_by,
+                "page": page,
+                "include_adult": False,
+                "include_video": False,
+            },
+        )
+        results = data.get("results") or []
+
+        for item in results:
+            movie = upsert_movie_from_tmdb(item)
+
+            # 장르 연결(Genre master가 있어야 함)
+            genre_ids = item.get("genre_ids") or []
+            if Genre.objects.exists() and genre_ids:
+                set_movie_genres(movie, genre_ids)
+
+            if with_detail:
+                try:
+                    fetch_movie_detail_and_update(movie)
+                except Exception:
+                    pass
+
+            if with_credits:
+                try:
+                    sync_movie_credits(movie, cast_limit=10)
+                except Exception:
+                    pass
+
+            total += 1
+
+        # TMDB 요청 과열 방지(너무 빠르면 막힘/에러 날 수 있음)
+        time.sleep(sleep_sec)
+
+    return total

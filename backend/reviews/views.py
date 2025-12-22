@@ -113,3 +113,38 @@ def recent_reviews(request):
     )
     return Response(RecentReviewSerializer(qs, many=True).data)
 
+
+
+
+
+
+
+
+
+# 마이페이지 
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def my_reviews_list(request):
+    status_param = request.query_params.get("status", "commented")
+    sort_param = request.query_params.get("sort", "latest")
+
+    # 1. 데이터 소스 결정
+    if status_param == "liked":
+        # 내가 좋아요 누른 리뷰 (User 모델의 related_name 확인 필요)
+        qs = request.user.liked_reviews.select_related("movie", "user").annotate(likes_count=Count("likes"))
+    else:
+        # 내가 쓴 리뷰
+        qs = Review.objects.filter(user=request.user).select_related("movie").annotate(likes_count=Count("likes"))
+        if status_param == "watched":
+            qs = qs.filter(watched=True)
+        elif status_param == "wish":
+            qs = qs.filter(watched=False)
+
+    # 2. 정렬 로직
+    if sort_param == "latest": qs = qs.order_by("-created_at")
+    elif sort_param == "oldest": qs = qs.order_by("created_at")
+    elif sort_param == "rating_high": qs = qs.order_by("-rating", "-created_at")
+    elif sort_param == "rating_low": qs = qs.order_by("rating", "-created_at")
+    
+    return Response(ReviewSerializer(qs, many=True, context={"request": request}).data)

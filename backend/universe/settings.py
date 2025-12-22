@@ -149,3 +149,11 @@ AUTH_USER_MODEL = "accounts.User"
 import os
 GMS_MODEL = os.getenv("GMS_MODEL", "gpt-4o-mini")  # 없으면 기본값
 GMS_KEY = os.getenv("GMS_KEY")
+
+
+
+
+# 마이페이지
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+

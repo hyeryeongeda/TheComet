@@ -7,7 +7,9 @@ from django.db.models import Prefetch
 from .models import Movie, MovieCredit
 from django.db.models import Q
 
-from .models import Movie, Genre, Person, HomeSectionEntry, MovieCredit
+from rest_framework.permissions import IsAuthenticated # 마이페이지 
+
+from .models import Movie, Genre, Person, HomeSectionEntry, MovieCredit, PersonLike, GenreLike # 마이페이지 
 from .serializers import (
     MovieListSerializer,
     MovieDetailSerializer,
@@ -238,3 +240,25 @@ def search(request):
         .order_by("-popularity")[:30]
     )
     return Response({"type": "movie", "results": MovieListSerializer(movies, many=True).data})
+
+
+
+
+# 마이페이지 
+# [추가] 마이페이지 좋아요 목록 API
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def my_likes_list(request):
+    like_type = request.query_params.get("type", "person")
+    
+    if like_type == "person":
+        likes = PersonLike.objects.filter(user=request.user).select_related("person")
+        people = [l.person for l in likes]
+        return Response(PersonSerializer(people, many=True).data)
+        
+    elif like_type == "genre":
+        likes = GenreLike.objects.filter(user=request.user).select_related("genre")
+        genres = [l.genre for l in likes]
+        return Response(GenreSerializer(genres, many=True).data)
+        
+    return Response([])

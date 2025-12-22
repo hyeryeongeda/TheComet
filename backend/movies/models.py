@@ -1,5 +1,6 @@
 # backend/movies/models.py
 from django.db import models
+from django.conf import settings
 
 
 class Genre(models.Model):
@@ -93,3 +94,32 @@ class HomeSectionEntry(models.Model):
             models.UniqueConstraint(fields=["section", "movie"], name="unique_section_movie")
         ]
         ordering = ["rank"]
+
+
+
+
+
+
+# 마이페이지 
+
+class PersonLike(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="person_likes")
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="likes")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "person"], name="unique_user_person_like")
+        ]
+
+class GenreLike(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="genre_likes")
+    genre = models.ForeignKey(Genre, on_delete=models.CASCADE, related_name="likes")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "genre"], name="unique_user_genre_like")
+        ]
+        
+        

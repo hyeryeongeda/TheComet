@@ -8,16 +8,20 @@ class User(AbstractUser):
         MALE = "M", "남"
         FEMALE = "F", "여"
 
-    # ✅ createsuperuser/기존 가입 흐름에서 터지지 않게 안전장치
+    # createsuperuser/기존 가입 흐름에서 터지지 않게 안전장치
     name = models.CharField(max_length=50, blank=True, default="")
     email = models.EmailField(unique=True)
 
     birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=1, choices=Gender.choices, null=True, blank=True)
 
-    profile_image = models.URLField(blank=True, default="")
+    
+    # 마이페이지 
+    # ▼▼▼ [수정] URLField -> ImageField로 변경! ▼▼▼
+    # (기존) profile_image = models.URLField(blank=True, default="")
+    profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
 
-    # ✅ 관리자 생성/폼에서 email/name을 요구하도록
+    # 관리자 생성/폼에서 email/name을 요구하도록
     EMAIL_FIELD = "email"
     REQUIRED_FIELDS = ["email", "name"]
 

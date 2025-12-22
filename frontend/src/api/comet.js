@@ -101,10 +101,10 @@ export async function fetchMe() {
   return res.data
 }
 
-export async function updateMyProfile(payload) {
-  const res = await api.patch('/auth/me/profile/', payload)
-  return res.data
-}
+// export async function updateMyProfile(payload) {
+//   const res = await api.patch('/auth/me/profile/', payload)
+//   return res.data
+// }
 
 export async function updateMyTheme(theme) {
   const res = await api.patch('/auth/me/theme/', { theme })
@@ -176,3 +176,38 @@ export async function fetchTasteDNA() {
   const { data } = await api.get('/recommends/taste/')
   return data
 }
+
+
+
+
+
+
+
+
+// =========================
+// 마이페이지
+// =========================
+export async function fetchMyActivity(params = {}) {
+  const res = await api.get('/reviews/my/', authConfig({ params }))
+  return res.data
+}
+
+// [추가] 좋아요한 인물/장르 가져오기
+export async function fetchMyLikes(type) {
+  const res = await api.get('/movies/likes/', authConfig({ params: { type } }))
+  return res.data
+}
+
+
+// export async function updateMyProfile(payload) {
+//   const res = await api.patch('/auth/me/profile/', payload)
+//   return res.data
+// } 이거 수정 할게요 
+export async function updateMyProfile(formData) {
+  // 파일 전송을 위해 Content-Type 헤더를 multipart/form-data로 설정하는 것은
+  // axios가 FormData를 감지하면 자동으로 처리하므로 별도 설정 불필요할 수 있으나,
+  // 안전하게 authConfig 내부 동작 확인 필요. 보통은 그냥 보내면 됨.
+  const res = await api.patch('/accounts/profile/', formData, authConfig()) 
+  return res.data
+}
+

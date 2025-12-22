@@ -48,6 +48,20 @@ const routes = [
   { path: '/:pathMatch(.*)*', name: 'notfound', component: () => import('@/views/NotFoundView.vue') },
   { path: '/people/:tmdbId', name: 'person-detail', component: () => import('@/views/PersonDetailView.vue'), props: true },
 
+
+  // 기존 routes 배열 안에 추가 [마이페이지]
+  { 
+    path: '/mypage/list/:type', 
+    name: 'mypage-grid', 
+    component: () => import('@/views/MyPageGridView.vue'),
+    props: true,
+    meta: { requiresAuth: true }
+  },
+
+
+
+
+
 ]
 
 export default routes

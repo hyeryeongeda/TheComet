@@ -66,9 +66,10 @@ function goDetail(tmdbId) {
   router.push(`/movies/${tmdbId}`)
 }
 
-function setType(next) {
+async function setType(next) {
   type.value = next
-  router.replace({ path: '/search', query: { q: q.value, type: next } })
+  await router.replace({ path: '/search', query: { q: q.value, type: next } })
+  run() // 탭을 바꿀 때마다 해당 타입으로 다시 검색
 }
 
 async function run() {

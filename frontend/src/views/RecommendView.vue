@@ -1,3 +1,4 @@
+<!-- frontend/src/views/RecommendView.vue -->
 <template>
   <main class="page">
     <section class="container">
@@ -30,32 +31,35 @@
           />
           <button class="btn" type="submit" :disabled="chatLoading || !chatInput.trim()">보내기</button>
         </form>
-        <!-- ✅ 추천 영화 카드 -->
-        <div v-if="chatMovies.length" class="movie-grid">
+
+        <!-- ✅ 추천 영화 카드 (목업처럼 세로 리스트) -->
+        <div v-if="chatMovies.length" class="rec-list">
           <button
-            v-for="m in chatMovies"
-            :key="m.tmdb_id"
-            class="movie-card"
+            v-for="m in chatMovies.slice(0, 3)"
+            :key="movieId(m)"
+            class="rec-card"
             type="button"
-            @click="$router.push({ name: 'movie-detail', params: { tmdbId: m.tmdb_id } })"
+            @click="goMovie(m)"
           >
-            <div class="thumb">
+            <div class="rec-thumb">
               <img v-if="m.poster_path" :src="posterUrl(m.poster_path)" alt="" />
               <div v-else class="noimg">No Image</div>
             </div>
-            <div class="mmeta">
-              <p class="mtitle">{{ m.title }}</p>
-              <p class="msub">★ {{ Number(m.vote_average || 0).toFixed(1) }}</p>
+
+            <div class="rec-body">
+              <p class="rec-title">{{ m.title }}</p>
+              <p class="rec-meta">
+                ★ {{ Number(m.vote_average || 0).toFixed(1) }}
+                <span v-if="m.release_date"> · {{ m.release_date.slice(0, 4) }}</span>
+              </p>
+              <p class="rec-genres" v-if="m.genres?.length">{{ genreLine(m) }}</p>
             </div>
           </button>
         </div>
 
-        <div v-else class="empty-movies">
+        <div v-else-if="askedOnce && !chatLoading" class="empty-movies">
           추천 영화가 아직 없어요.
         </div>
-
-        
-
       </div>
 
       <!-- 장르 탭 -->
@@ -110,7 +114,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   postTasteChat,
   fetchGenreRecommends,
@@ -118,6 +123,7 @@ import {
   fetchUserRecommends,
 } from '@/api/comet'
 
+const router = useRouter()
 const tab = ref('chat')
 
 // --- AI 챗봇 탭 ---
@@ -127,12 +133,42 @@ const chatMessages = ref([
 const chatInput = ref('')
 const chatLoading = ref(false)
 const chatMovies = ref([])
+const askedOnce = ref(false)
 
+function posterUrl(path) {
+  return path ? `https://image.tmdb.org/t/p/w342${path}` : ''
+}
+
+function movieId(m) {
+  return m?.tmdb_id ?? m?.tmdbId ?? m?.id
+}
+
+function genreLine(m) {
+  return (m?.genres ?? []).map((g) => g.name).join(' · ')
+}
+
+function goMovie(m) {
+  const id = movieId(m)
+  if (!id) return
+  router.push({ name: 'movie-detail', params: { tmdbId: id } })
+}
+
+function pickMovies(res) {
+  // ✅ 어떤 래핑이 와도 movies를 최대한 찾아서 배열로 맞춤
+  const movies =
+    res?.movies ??
+    res?.results ??
+    res?.data?.movies ??
+    res?.data?.results ??
+    []
+  return Array.isArray(movies) ? movies : []
+}
 
 async function sendChat() {
   const text = chatInput.value.trim()
   if (!text || chatLoading.value) return
 
+  askedOnce.value = true
   chatMessages.value.push({ role: 'user', content: text })
   chatInput.value = ''
   chatLoading.value = true
@@ -141,19 +177,23 @@ async function sendChat() {
     const history = chatMessages.value.map((m) => ({ role: m.role, content: m.content }))
     const res = await postTasteChat({ message: text, history })
 
-    // ✅ 백 응답 기준: answer, movies
-    const reply = res?.answer || '응답이 비어있어요.'
+    // ✅ 백 응답 기준: answer, movies (혹시 reply로 오면 fallback)
+    const reply = res?.answer || res?.reply || '응답이 비어있어요.'
     chatMessages.value.push({ role: 'assistant', content: reply })
 
-    // ✅ 영화 카드용 데이터 저장
-    chatMovies.value = Array.isArray(res?.movies) ? res.movies : []
+    // ✅ 영화 카드용 데이터 저장(키 방어)
+    chatMovies.value = pickMovies(res)
+
+    // 디버그 필요하면 주석 해제
+    // console.log('AI res:', res)
+    // console.log('AI movies:', chatMovies.value.length, chatMovies.value[0])
   } catch (e) {
     console.error(e)
     chatMessages.value.push({ role: 'assistant', content: '에러가 발생했어요. 다시 시도해 주세요.' })
+    chatMovies.value = []
   } finally {
     chatLoading.value = false
   }
-
 }
 
 // --- 추천 탭 데이터 ---
@@ -161,11 +201,6 @@ const loading = ref({ genre: false, person: false, user: false })
 const genreItems = ref([])
 const personItems = ref([])
 const userItems = ref([])
-
-
-function posterUrl(path) {
-  return path ? `https://image.tmdb.org/t/p/w342${path}` : ''
-}
 
 function normalizeList(res) {
   if (Array.isArray(res)) return res
@@ -301,25 +336,27 @@ watch(
 }
 .card-title { margin: 0 0 6px; font-weight: 900; }
 .card-desc { margin: 0; color: #444; font-weight: 700; line-height: 1.4; }
-.movie-grid{
+
+/* ✅ AI 추천 카드(목업 느낌: 세로 3개 카드) */
+.rec-list{
   margin-top: 14px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
-@media (max-width: 900px){ .movie-grid{ grid-template-columns: repeat(3, 1fr);} }
-@media (max-width: 560px){ .movie-grid{ grid-template-columns: repeat(2, 1fr);} }
-
-.movie-card{
+.rec-card{
+  width: 100%;
   border: 1px solid #eee;
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
-  padding: 10px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
   text-align: left;
   cursor: pointer;
 }
-.thumb{
-  width: 100%;
+.rec-thumb{
+  width: 110px;
   aspect-ratio: 2/3;
   border-radius: 12px;
   overflow: hidden;
@@ -327,11 +364,13 @@ watch(
   display: grid;
   place-items: center;
 }
-.thumb img{ width:100%; height:100%; object-fit: cover; }
+.rec-thumb img{ width:100%; height:100%; object-fit: cover; }
 .noimg{ color:#777; font-weight: 800; }
-.mmeta{ margin-top: 8px; }
-.mtitle{ margin:0; font-weight: 900; font-size: 14px; }
-.msub{ margin:4px 0 0; color:#666; font-weight: 800; font-size: 12px; }
-.empty-movies{ margin-top: 14px; color:#777; font-weight: 800; }
 
+.rec-body{ display: grid; align-content: start; gap: 6px; }
+.rec-title{ margin:0; font-weight: 900; font-size: 16px; }
+.rec-meta{ margin:0; color:#666; font-weight: 800; font-size: 13px; }
+.rec-genres{ margin:0; color:#333; font-weight: 800; font-size: 13px; }
+
+.empty-movies{ margin-top: 14px; color:#777; font-weight: 800; }
 </style>

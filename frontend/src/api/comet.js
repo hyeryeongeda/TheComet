@@ -162,3 +162,9 @@ function authHeaders() {
   const token = localStorage.getItem('access')
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
+
+
+export const searchComet = (params) => {
+  return axios.get('/api/movies/search/', { params }) 
+  // 여기서 params가 { q: '박찬욱', type: 'person' } 형태로 잘 가야 합니다.
+}

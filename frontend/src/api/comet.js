@@ -277,3 +277,20 @@ export async function fetchMyReview(tmdbId) {
   if (res.status === 204) return null
   return res.data
 }
+
+
+
+// comet.js
+export async function togglePersonLike(personId, payload) {
+  // 주소 끝에 / 확인 필수
+  const res = await api.post(`/movies/people/${personId}/like/`, payload, authConfig())
+  return res.data
+}
+
+// src/api/comet.js 에 추가
+export async function fetchMyLikedPeople() {
+  // 백엔드 URL과 일치해야 함
+  const res = await api.get('/movies/me/liked-people/', authConfig())
+  return res.data
+}
+

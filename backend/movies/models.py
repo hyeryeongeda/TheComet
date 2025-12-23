@@ -138,3 +138,19 @@ class MovieLike(models.Model):
             models.UniqueConstraint(fields=["user", "movie"], name="unique_user_movie_like")
         ]
         
+        
+        
+    
+
+# 인물 좋아요 저장 모델
+class LikedPerson(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='liked_people')
+    person_id = models.IntegerField()  # TMDB 인물 ID
+    name = models.CharField(max_length=100)
+    profile_path = models.CharField(max_length=200, null=True, blank=True)
+    department = models.CharField(max_length=50, null=True, blank=True) # 직업(Acting 등)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'person_id') # 중복 좋아요 방지
+        

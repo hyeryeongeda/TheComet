@@ -18,6 +18,7 @@
           v-for="item in items" 
           :key="item.tmdb_id" 
           :person="item" 
+          @toggle-like="handleUnlikePerson"
         />
       </template>
 
@@ -49,7 +50,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { fetchMyActivity, fetchMyLikes } from '@/api/comet' 
+// ✅ [수정] 필요한 API 함수들 추가 임포트 (fetchMyLikedPeople, togglePersonLike)
+import { fetchMyActivity, fetchMyLikes, fetchMyLikedPeople, togglePersonLike } from '@/api/comet' 
 
 // 컴포넌트 임포트
 import SortDropdown from '@/components/ui/SortDropdown.vue'
@@ -66,7 +68,8 @@ const currentSort = ref('latest')
 const pageTitle = computed(() => {
   const titles = {
     watched: '봤던 영화',
-    wish: '좋아요 한 영화',
+    wish: '보고싶은 영화',      // 문맥상 '보고싶은 영화'가 맞아서 수정 제안 (원하시는대로 두셔도 됨)
+    movie_likes: '좋아요 한 영화', // movie_likes 케이스 추가
     commented: '코멘트 작성한 영화',
     liked_people: '좋아요한 인물',
     liked_reviews: '좋아요한 코멘트'
@@ -74,14 +77,38 @@ const pageTitle = computed(() => {
   return titles[type] || '목록'
 })
 
+// ✅ [추가] 인물 좋아요 취소 핸들러
+async function handleUnlikePerson(person) {
+  // 1. 화면에서 즉시 제거
+  items.value = items.value.filter(p => p.tmdb_id !== person.tmdb_id)
+  
+  // 2. 서버 요청
+  try {
+    await togglePersonLike(person.tmdb_id)
+  } catch (e) {
+    console.error('삭제 실패', e)
+    alert('오류가 발생했습니다.')
+  }
+}
+
 async function loadData() {
   loading.value = true
   try {
+    // ✅ [수정] 타입별 API 호출 로직 정비
     if (type === 'liked_people') {
-      items.value = await fetchMyLikes('person')
-    } else if (type === 'liked_reviews') {
+      // 인물: 새로 만든 API 사용
+      items.value = await fetchMyLikedPeople()
+    } 
+    else if (type === 'movie_likes') {
+      // 영화 좋아요: fetchMyLikes('movie') 사용
+      items.value = await fetchMyLikes('movie')
+    }
+    else if (type === 'liked_reviews') {
+      // 리뷰 좋아요
       items.value = await fetchMyActivity({ status: 'liked', sort: currentSort.value })
-    } else {
+    } 
+    else {
+      // 나머지 (commented, wish 등)
       items.value = await fetchMyActivity({ status: type, sort: currentSort.value })
     }
   } catch (e) {

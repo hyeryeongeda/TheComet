@@ -39,7 +39,18 @@
     </div>
 
     <div v-if="selected" class="hero">
-      <div class="avatar">
+      <button class="heart-btn" type="button" @click.stop="toggleLike(selected)">
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          width="24" height="24" 
+          viewBox="0 0 24 24" 
+          :class="['heart-icon', { active: isLiked(selected.tmdb_id) }]"
+        >
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+      </button>
+
+      <div class="avatar" @click="goPersonDetail(selected)">
         <img v-if="selected.profile_path" :src="profileUrl(selected.profile_path)" alt="profile" />
         <div v-else class="noimg">2:3</div>
       </div>
@@ -75,7 +86,7 @@
 
           <div class="meta">
             <p class="title">{{ m.title }}</p>
-            <p class="rate"><span class="star">★</span> {{ Number(m.vote_average || 0).toFixed(1) }}</p>
+            <p class="rate"><span class="star">★</span> {{ formatRating(m.vote_average) }}</p>
           </div>
         </button>
       </div>
@@ -87,8 +98,55 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { fetchPersonRecommends, fetchPersonDetail } from '@/api/comet'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { fetchPersonRecommends, fetchPersonDetail, togglePersonLike, fetchMyLikedPeople } from '@/api/comet'
 
+const router = useRouter()
+const authStore = useAuthStore()
+
+// ✅ 좋아요 관리 상태
+const likedIds = ref(new Set())
+
+// 좋아요 여부 확인
+function isLiked(personId) {
+  return likedIds.value.has(personId)
+}
+
+// 인물 상세 페이지 이동
+function goPersonDetail(p) {
+  router.push({ name: 'person-detail', params: { tmdbId: p.tmdb_id } })
+}
+
+// ✅ 좋아요 토글 함수
+async function toggleLike(p) {
+  if (!authStore.isLoggedIn) return alert('로그인이 필요합니다.')
+
+  const personId = p.tmdb_id || p.id
+  
+  try {
+    const res = await togglePersonLike(personId, {
+      name: p.name,
+      profile_path: p.profile_path,
+      known_for_department: p.known_for_department,
+    })
+
+    // 반응형 업데이트를 위해 Set 재할당
+    const next = new Set(likedIds.value)
+    if (res.liked) {
+      next.add(personId)
+    } else {
+      next.delete(personId)
+    }
+    likedIds.value = next
+    
+  } catch (error) {
+    console.error("좋아요 토글 실패:", error)
+    alert("오류가 발생했습니다.")
+  }
+}
+
+// 기존 변수들
 const q = ref('')
 const loading = ref({ search: false, detail: false })
 const peopleList = ref([]) 
@@ -105,15 +163,18 @@ function posterUrl(path) {
   return path.startsWith('http') ? path : `https://image.tmdb.org/t/p/w342${path}`
 }
 
+// 별점 포맷팅 함수 추가
+function formatRating(val) {
+  const num = Number(val)
+  return isNaN(num) ? '0.0' : num.toFixed(1)
+}
+
 function normalizePeople(res) {
   if (Array.isArray(res?.results)) return res.results
   if (Array.isArray(res)) return res
   return []
 }
 
-/**
- * 1) 기본 추천 로드 (작품이 있는 인물을 찾을 때까지 랜덤 검색)
- */
 async function loadDefault() {
   loading.value.search = true
   try {
@@ -121,7 +182,6 @@ async function loadDefault() {
     peopleList.value = normalizePeople(res)
     
     if (peopleList.value.length > 0) {
-      // 이제 리스트의 모든 인물이 작품을 가지고 있으므로 바로 랜덤 선택 가능
       const randomIndex = Math.floor(Math.random() * peopleList.value.length)
       await selectPerson(peopleList.value[randomIndex])
     }
@@ -130,9 +190,6 @@ async function loadDefault() {
   }
 }
 
-/**
- * 2) 검색 결과 처리
- */
 async function searchPeople() {
   const keyword = q.value.trim()
   if (!keyword) return
@@ -141,16 +198,12 @@ async function searchPeople() {
     const res = await fetchPersonRecommends({ q: keyword })
     peopleList.value = normalizePeople(res)
     if (peopleList.value.length) {
-      await selectPerson(peopleList.value[0]) // 검색 시엔 첫 번째 결과 우선
+      await selectPerson(peopleList.value[0])
     }
   } finally {
     loading.value.search = false
   }
 }
-
-/**
- * 3) 특정 인물 상세 정보 로드
- */
 
 async function selectPerson(p) {
   selected.value = p
@@ -159,26 +212,20 @@ async function selectPerson(p) {
   loading.value.detail = true
 
   try {
-    // 1. 상세 데이터 가져오기
     const detail = await fetchPersonDetail(p.tmdb_id || p.id)
     personDetail.value = detail
     
-    /**
-     * 2. [수정 핵심] 백엔드 Serializer에서 정의한 'filmography'를 최우선으로 가져옵니다.
-     */
     const candidates = detail?.filmography || []
 
-    // 3. 데이터 매핑 (백엔드 out.append 구조와 맞춤)
+    // 데이터 매핑 시 vote_average 확인
     const mapped = candidates.map((x) => ({
-      tmdb_id: x.tmdb_id,    // 백엔드 필드명: tmdb_id
-      title: x.title,        // 백엔드 필드명: title
-      poster_path: x.poster_path, // 백엔드 필드명: poster_path
-      // 평점이 없는 리스트이므로 기본값 0 처리 혹은 필요시 추가 데이터 요청
-      vote_average: x.vote_average ?? 0, 
+      tmdb_id: x.tmdb_id,
+      title: x.title,
+      poster_path: x.poster_path,
+      vote_average: x.vote_average !== undefined ? x.vote_average : 0, 
     })).filter(x => x.tmdb_id)
 
-    // 4. 결과 할당
-    workMovies.value = mapped.slice(0, 10) // 상위 10개만 표시
+    workMovies.value = mapped.slice(0, 10)
     
   } catch (e) {
     console.error("인물 상세 로드 실패:", e)
@@ -192,7 +239,19 @@ const selectedBio = computed(() => {
   return bio ? bio : '이 인물의 대표작과 추천작을 모아 보여줄게요.'
 })
 
-onMounted(loadDefault)
+onMounted(async () => {
+  await loadDefault()
+  
+  // 로그인 시 좋아요 목록 로드
+  if (authStore.isLoggedIn) {
+    try {
+      const list = await fetchMyLikedPeople()
+      likedIds.value = new Set(list.map(x => x.tmdb_id))
+    } catch (e) {
+      console.log('좋아요 목록 로드 실패 (데이터 없음)')
+    }
+  }
+})
 </script>
 
 <style scoped>
@@ -269,8 +328,9 @@ onMounted(loadDefault)
 }
 .chip.active { background: #111; color: #fff; border-color: #111; }
 
-/* ✅ 시안 반영 Hero Section */
+/* ✅ Hero Section (하트 버튼 배치를 위해 relative 필수) */
 .hero {
+  position: relative;
   margin-top: 20px;
   border: 1px solid #e0e0e0;
   border-radius: 24px;
@@ -281,6 +341,44 @@ onMounted(loadDefault)
   background: #fff;
 }
 
+/* ✅ 하트 버튼 스타일 */
+.heart-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s;
+}
+.heart-btn:hover {
+  background: #f8f8f8;
+  transform: scale(1.05);
+}
+
+/* ✅ 하트 아이콘 스타일 & 색상 */
+.heart-icon {
+  fill: #e0e0e0; /* 기본 회색 */
+  stroke: #ccc;
+  stroke-width: 1;
+  transition: all 0.3s ease;
+}
+.heart-icon.active {
+  fill: #ff2f6e; /* 좋아요 활성 시 핑크/레드 */
+  stroke: #ff2f6e;
+}
+.heart-btn:hover .heart-icon {
+  transform: scale(1.1);
+}
+
 .avatar {
   width: 180px;
   aspect-ratio: 2 / 3;
@@ -289,7 +387,10 @@ onMounted(loadDefault)
   background: #111;
   display: grid;
   place-items: center;
+  cursor: pointer; /* 클릭 가능 표시 */
+  transition: transform 0.2s;
 }
+.avatar:hover { transform: scale(1.02); }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .noimg { color: rgba(255,255,255,0.4); font-weight: 900; font-size: 20px; }
 
@@ -311,7 +412,6 @@ onMounted(loadDefault)
 .sub { margin: 0 0 15px; font-size: 16px; color: #333; }
 .sub strong { color: #111; font-weight: 900; }
 
-/* ✅ 포스터 그리드 */
 .grid {
   display: grid;
   gap: 16px;

@@ -1,11 +1,9 @@
 <template>
   <div class="page">
     <MyPageProfileCard :user="user" @edit="openEdit = true" />
-
     <MyPageTabs v-model="tab" />
 
     <div v-if="tab === 'vault'" class="content">
-      
       <MyPageSection 
         title="코멘트 영화 (작성한)" 
         :moreLink="{ name: 'mypage-grid', params: { type: 'commented' }}"
@@ -42,7 +40,12 @@
         :isEmpty="likedPeople.length === 0"
         emptyMsg="좋아요한 인물이 없습니다."
       >
-        <PersonCard v-for="p in likedPeople.slice(0, 5)" :key="p.tmdb_id" :person="p" />
+        <PersonCard 
+          v-for="p in likedPeople.slice(0, 5)" 
+          :key="p.tmdb_id" 
+          :person="p" 
+          @toggle-like="handleUnlikePerson" 
+        />
       </MyPageSection>
 
       <MyPageSection 
@@ -51,20 +54,31 @@
         :isEmpty="likedReviews.length === 0"
         emptyMsg="좋아요한 코멘트가 없습니다."
       >
-        <ReviewCard v-for="r in likedReviews.slice(0, 5)" :key="r.id" :review="r" />
+        <ReviewCard 
+          v-for="r in likedReviews.slice(0, 5)" 
+          :key="r.id" 
+          :review="r" 
+          @click="openReviewModal(r)"
+          style="cursor: pointer;"
+        />
       </MyPageSection>
     </div>
 
     <ProfileEditModal v-if="openEdit" :user="user" @close="openEdit = false" @saved="onProfileSaved" />
+
+    <ReviewDetailModal 
+      v-if="isReviewModalOpen" 
+      :review="selectedReview" 
+      @close="isReviewModalOpen = false" 
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { fetchMyActivity, fetchMyLikes } from '@/api/comet' 
+import { fetchMyActivity, fetchMyLikes, togglePersonLike, fetchMyLikedPeople } from '@/api/comet' 
 
-// 컴포넌트 임포트 (경로 확인해주세요!)
 import MyPageProfileCard from '@/components/mypage/MyPageProfileCard.vue'
 import MyPageTabs from '@/components/mypage/MyPageTabs.vue'
 import MyPageSection from '@/components/mypage/MyPageSection.vue'
@@ -72,6 +86,8 @@ import MovieCard from '@/components/movie/MovieCard.vue'
 import PersonCard from '@/components/movie/PersonCard.vue' 
 import ReviewCard from '@/components/review/ReviewCard.vue'
 import ProfileEditModal from '@/components/user/ProfileEditModal.vue' 
+// ✅ [추가] 리뷰 상세 모달 임포트 (경로 확인해주세요!)
+import ReviewDetailModal from '@/components/review/ReviewDetailModal.vue'
 
 const auth = useAuthStore()
 const user = computed(() => auth.user)
@@ -79,37 +95,55 @@ const user = computed(() => auth.user)
 const tab = ref('vault')
 const openEdit = ref(false)
 
-// 데이터 상태 변수들
-const commentedList = ref([])   // 내가 쓴 리뷰
-const movieLikesList = ref([])  // [추가] 내가 좋아요(하트) 누른 영화
-const wishList = ref([])        // 보고싶어요 (리뷰 썼지만 안 본 영화)
-const likedPeople = ref([])     // 좋아요 인물
-const likedReviews = ref([])    // 좋아요 누른 리뷰
+// ✅ [추가] 리뷰 모달 관련 상태
+const isReviewModalOpen = ref(false)
+const selectedReview = ref(null)
+
+const commentedList = ref([])
+const movieLikesList = ref([])
+const wishList = ref([])
+const likedPeople = ref([])
+const likedReviews = ref([])
 
 function onProfileSaved(updatedUser) {
   auth.user = { ...auth.user, ...updatedUser }
 }
 
+// 인물 좋아요 취소 핸들러 (기존 유지)
+async function handleUnlikePerson(person) {
+  likedPeople.value = likedPeople.value.filter(p => p.tmdb_id !== person.tmdb_id)
+  try {
+    await togglePersonLike(person.tmdb_id)
+  } catch (e) {
+    console.error('취소 실패', e)
+    alert('오류가 발생했습니다.')
+  }
+}
+
+// ✅ [추가] 리뷰 모달 열기 함수
+function openReviewModal(review) {
+  selectedReview.value = review
+  isReviewModalOpen.value = true
+}
+
 onMounted(async () => {
   try {
-    // Promise.all로 모든 데이터 한 번에 병렬 요청
     const [
       commented, 
-      movieLikes,  // [추가] 영화 좋아요
+      movieLikes, 
       wish, 
       people, 
       reviews
     ] = await Promise.all([
-      fetchMyActivity({ status: 'commented', sort: 'latest' }), // 1. 작성한 리뷰
-      fetchMyLikes('movie'),                                    // 2. [중요] 영화 좋아요 목록
-      fetchMyActivity({ status: 'wish', sort: 'latest' }),      // 3. 보고싶어요 (watched=False)
-      fetchMyLikes('person'),                                   // 4. 인물 좋아요
-      fetchMyActivity({ status: 'liked', sort: 'latest' })      // 5. 좋아요 누른 리뷰
+      fetchMyActivity({ status: 'commented', sort: 'latest' }),
+      fetchMyLikes('movie'),
+      fetchMyActivity({ status: 'wish', sort: 'latest' }),
+      fetchMyLikedPeople(), 
+      fetchMyActivity({ status: 'liked', sort: 'latest' })
     ])
     
-    // 데이터 할당
     commentedList.value = commented || []
-    movieLikesList.value = movieLikes || [] // [연결]
+    movieLikesList.value = movieLikes || []
     wishList.value = wish || []
     likedPeople.value = people || []
     likedReviews.value = reviews || []

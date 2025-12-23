@@ -9,7 +9,7 @@ from django.db.models import Q, Count
 
 from rest_framework.permissions import IsAuthenticated # 마이페이지 
 
-from .models import Movie, Genre, Person, HomeSectionEntry, MovieCredit, PersonLike, GenreLike, MovieLike # 마이페이지  # 영화상세 
+from .models import Movie, Genre, Person, HomeSectionEntry, MovieCredit, PersonLike, GenreLike, MovieLike, LikedPerson # 마이페이지  # 영화상세 
 from .serializers import (
     MovieListSerializer,
     MovieDetailSerializer,
@@ -340,3 +340,61 @@ def movie_like_toggle(request, tmdb_id: int):
     
     return Response({"liked": liked, "tmdb_id": tmdb_id})
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1. 인물 좋아요 토글 (추가/삭제)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def toggle_person_like(request, person_id):
+    user = request.user
+    
+    # 중복 체크: 이미 좋아요 한 인물인지 확인
+    # (주의: LikedPerson 모델을 사용합니다)
+    liked_obj = LikedPerson.objects.filter(user=user, person_id=person_id).first()
+
+    if liked_obj:
+        # 이미 있으면 삭제 (좋아요 취소)
+        liked_obj.delete()
+        return Response({'liked': False})
+    else:
+        # 없으면 새로 생성 (좋아요)
+        # 프론트엔드에서 보내준 이름, 사진 경로 등을 함께 저장
+        LikedPerson.objects.create(
+            user=user,
+            person_id=person_id,
+            name=request.data.get('name', 'Unknown'),
+            profile_path=request.data.get('profile_path', ''),
+            department=request.data.get('known_for_department', '')
+        )
+        return Response({'liked': True})
+
+# 2. 내 좋아요 목록 조회 (마이페이지용)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_my_liked_people(request):
+    likes = LikedPerson.objects.filter(user=request.user).order_by('-created_at')
+    
+    # 프론트엔드가 사용하기 편한 구조로 변환
+    data = [{
+        'tmdb_id': p.person_id,  
+        'name': p.name,
+        'profile_path': p.profile_path,
+        'known_for_department': p.department
+    } for p in likes]
+    
+    return Response(data)

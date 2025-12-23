@@ -244,8 +244,7 @@ def search(request):
 
 
 
-# 마이페이지 
-# [추가] 마이페이지 좋아요 목록 API
+# 마이페이지 좋아요 목록 API
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def my_likes_list(request):
@@ -340,5 +339,4 @@ def movie_like_toggle(request, tmdb_id: int):
         liked = True
     
     return Response({"liked": liked, "tmdb_id": tmdb_id})
-
 

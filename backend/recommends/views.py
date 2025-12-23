@@ -280,9 +280,22 @@ def taste_summary(request):
     me = request.user
     my_reviews_qs = Review.objects.filter(user=me).select_related("movie").order_by("-created_at")
     tmdb_ids = list(my_reviews_qs.values_list("movie__tmdb_id", flat=True).distinct())
+    watched_movies_qs = Movie.objects.filter(tmdb_id__in=tmdb_ids)
     watched_count = len(tmdb_ids)
+    watched_data = []
+    for review in my_reviews_qs:
+        watched_data.append({
+            "tmdb_id": review.movie.tmdb_id,
+            "title": review.movie.title,
+            "poster_path": review.movie.poster_path,
+            "genres": [g.name for g in review.movie.genres.all()], # 장르 필터링용
+            "my_rating": review.rating # ⭐ 내 평점 데이터 추가
+        })
+
+    watched_count = len(watched_data)
+    
     if watched_count == 0:
-        return Response({"watched_count": 0, "top_genre": "-", "avg_rating": 0, "recent_movie_title": "", "genre_scores": {}, "recommended_movies": [], "detail": "작성된 리뷰가 없습니다."})
+        return Response({"watched_count": 0, "top_genre": "-", "avg_rating": 0, "recent_movie_title": "", "genre_scores": {}, "watched_movies": [],"recommended_movies": [], "detail": "작성된 리뷰가 없습니다."})
     avg_rating = round(float(my_reviews_qs.aggregate(avg=Avg("rating"))["avg"] or 0), 1)
     latest_review = my_reviews_qs.first()
     recent_movie_title = latest_review.movie.title if latest_review else ""
@@ -297,4 +310,4 @@ def taste_summary(request):
     if top_genre_names: rec_qs = rec_qs.filter(genres__name__in=top_genre_names).distinct()
     if tmdb_ids: rec_qs = rec_qs.exclude(tmdb_id__in=tmdb_ids)
     rec_qs = rec_qs.order_by("-popularity")[:12]
-    return Response({"watched_count": watched_count, "top_genre": top_genre, "avg_rating": avg_rating, "recent_movie_title": recent_movie_title, "genre_scores": genre_scores, "recommended_movies": MovieListSerializer(rec_qs, many=True).data})
+    return Response({"watched_count": watched_count, "top_genre": top_genre, "avg_rating": avg_rating, "recent_movie_title": recent_movie_title, "genre_scores": genre_scores, "watched_movies": watched_data, "recommended_movies": MovieListSerializer(rec_qs, many=True).data})

@@ -202,18 +202,43 @@ function toggleWithdraw() {
   showWithdraw.value = !showWithdraw.value
 }
 
+/* -----------------------------
+  Withdraw (회원 탈퇴)
+----------------------------- */
 async function handleWithdraw() {
   if (!withdraw.agree || withdraw.loading) return
+  
+  // 최종 확인 한 번 더 (실수 방지)
+  if (!confirm('정말로 탈퇴하시겠습니까? 탈퇴 후에는 데이터를 복구할 수 없습니다.')) {
+    return
+  }
+
   withdraw.loading = true
   withdraw.error = ''
 
   try {
+    // 1. 서버에 탈퇴 요청
     await withdrawAccount(withdraw.password)
-    await authStore.logout() // store에 정의된 로그아웃 호출
+
+    // 2. 탈퇴 완료 알림 (여기가 추가된 부분입니다)
+    alert('회원 탈퇴가 완료되었습니다. 그동안 혜성(The Comet)을 이용해 주셔서 감사합니다.')
+
+    // 3. 로그아웃 처리 (토큰 삭제 및 상태 초기화)
+    if (typeof authStore.logout === 'function') {
+      await authStore.logout()
+    } else {
+      localStorage.removeItem('access')
+      localStorage.removeItem('refresh')
+      authStore.user = null
+    }
+
+    // 4. 모달 닫기 및 페이지 이동
     emit('close')
-    router.push('/')
+    router.push('/') // 메인 페이지나 로그인 페이지로 이동
+    
   } catch (err) {
-    withdraw.error = err.response?.data?.detail || '탈퇴 실패: 비밀번호를 확인하세요.'
+    // 비밀번호가 틀렸거나 서버 에러인 경우
+    withdraw.error = err.response?.data?.detail || '탈퇴 처리 중 오류가 발생했습니다. 비밀번호를 확인해 주세요.'
   } finally {
     withdraw.loading = false
   }

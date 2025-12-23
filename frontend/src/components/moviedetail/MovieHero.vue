@@ -13,7 +13,7 @@
           <span class="dot">・</span>
           <span>{{ movie.genres?.map(g => g.name).join('/') }}</span>
           <span class="dot">・</span>
-          <span>{{ movie.production_countries?.[0]?.name }}</span>
+          <span>{{ movie.runtime }}분</span>
         </div>
       </div>
     </div>

@@ -38,13 +38,20 @@
       </div>
       <p v-if="reviewsLoading" class="muted">불러오는 중...</p>
       
-      <div v-else class="review-grid">
-        <ReviewCard
-          v-for="r in recentReviews"
-          :key="r.id"
-          :review="r"
-          @click="openReviewModal(r)"
-        />
+      <div class="review-slider-wrapper">
+        <button class="nav-btn left" @click="scrollPrev">‹</button>
+
+        <div class="review-scroll-container" ref="scrollContainer">
+          <ReviewCard
+            v-for="r in recentReviews"
+            :key="r.id"
+            :review="r"
+            class="slider-item"
+            @click="openReviewModal(r)"
+          />
+        </div>
+
+        <button class="nav-btn right" @click="scrollNext">›</button>
       </div>
     </section>
 
@@ -152,7 +159,29 @@ function handleReviewUpdateLocal(updatedReview) {
     selectedReview.value = { ...selectedReview.value, ...updatedReview }
   }
 }
+const scrollContainer = ref(null)
 
+// 왼쪽으로 이동
+const scrollPrev = () => {
+  if (scrollContainer.value) {
+    // 현재 컨테이너 너비만큼 왼쪽으로 부드럽게 이동
+    scrollContainer.value.scrollBy({
+      left: -scrollContainer.value.clientWidth,
+      behavior: 'smooth'
+    })
+  }
+}
+
+// 오른쪽으로 이동
+const scrollNext = () => {
+  if (scrollContainer.value) {
+    // 현재 컨테이너 너비만큼 오른쪽으로 부드럽게 이동
+    scrollContainer.value.scrollBy({
+      left: scrollContainer.value.clientWidth,
+      behavior: 'smooth'
+    })
+  }
+}
 // [댓글 작성]
 async function handleReplySubmit(content) {
   if (!authStore.isLoggedIn) return alert('로그인 후 이용해주세요.')
@@ -208,26 +237,153 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 기존 스타일 유지 */
-.page { max-width: 1100px; margin: 0 auto; padding: 20px 14px 60px; }
-.hero { padding: 26px 0 18px; }
-.hero-title { margin: 0; font-size: 44px; font-weight: 900; letter-spacing: -0.02em; }
-.hero-sub { margin: 10px 0 0; color: #666; font-weight: 700; }
-.divider { border: none; border-top: 1px solid #eee; margin: 18px 0 22px; }
-.sec { margin-top: 18px; }
-.sec-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-.sec-title { margin: 0; font-size: 18px; font-weight: 900; }
-.more { border: none; background: transparent; cursor: pointer; color: #666; font-weight: 900; }
-.more:hover { text-decoration: underline; }
-.muted { color: #777; margin: 10px 0 0; }
-
-.review-grid {
-  margin-top: 16px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr); 
-  gap: 20px;
+/* 1. 기본 레이아웃 및 텍스트 (테마 대응) */
+.page { 
+  max-width: 1100px; 
+  margin: 0 auto; 
+  padding: 20px 14px 60px; 
+  color: var(--text); /* #111 -> 테마 적용 */
 }
 
-@media (max-width: 900px) { .review-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 640px) { .review-grid { grid-template-columns: 1fr; } }
+.hero { padding: 26px 0 18px; }
+.hero-title { 
+  margin: 0; 
+  font-size: 44px; 
+  font-weight: 900; 
+  letter-spacing: -0.02em; 
+  color: var(--text); 
+}
+.hero-sub { 
+  margin: 10px 0 0; 
+  color: var(--muted); /* #666 -> 테마 적용 */
+  font-weight: 700; 
+}
+
+.divider { 
+  border: none; 
+  border-top: 1px solid var(--border); /* #eee -> 테마 적용 */
+  margin: 18px 0 22px; 
+}
+
+.sec { margin-top: 18px; }
+.sec-head { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  gap: 10px; 
+  margin-bottom: 10px; 
+}
+.sec-title { 
+  margin: 0; 
+  font-size: 18px; 
+  font-weight: 900; 
+  color: var(--text);
+}
+
+.more { 
+  border: none; 
+  background: transparent; 
+  cursor: pointer; 
+  color: var(--muted); 
+  font-weight: 900; 
+}
+.more:hover { 
+  text-decoration: underline; 
+  color: var(--primary); 
+}
+
+.muted { color: var(--muted); margin: 10px 0 0; }
+
+/* 2. 슬라이더 래퍼 */
+.review-slider-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* 3. 리뷰 그리드 컨테이너 (핵심: 3열 2행 설정) */
+.review-scroll-container {
+  display: grid;
+  /* ✅ 2줄(행)로 고정 */
+  grid-template-rows: repeat(2, 1fr); 
+  /* ✅ 아이템을 위->아래로 먼저 채우고 가로(열)로 확장 */
+  grid-auto-flow: column; 
+  /* ✅ 한 화면에 3개씩 노출 (간격 16px을 고려한 계산값) */
+  grid-auto-columns: calc(33.333% - 10.7px); 
+  
+  gap: 16px; 
+  overflow-x: auto; 
+  scroll-behavior: smooth; 
+  scroll-snap-type: x mandatory; 
+  padding: 10px 0;
+  
+  /* 스크롤바 숨기기 */
+  scrollbar-width: none; /* 파이어폭스 */
+  -ms-overflow-style: none; /* IE */
+}
+
+/* 크롬, 사파리 스크롤바 숨기기 */
+.review-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.slider-item {
+  width: 100%;
+  scroll-snap-align: start; /* 넘길 때 시작점에 딱 붙음 */
+}
+
+/* 4. 네비게이션 버튼 스타일 */
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--card); /* 테마 배경색 */
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.nav-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  transform: translateY(-50%) scale(1.1); /* 살짝 커지는 효과 */
+}
+
+/* 버튼 위치 조정 */
+.nav-btn.left { left: -22px; }
+.nav-btn.right { right: -22px; }
+
+.chevron {
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* 5. 반응형 대응 (화면 크기에 따라 열 개수 조절) */
+@media (max-width: 768px) {
+  .review-scroll-container {
+    /* 태블릿: 2열 2행으로 변경 */
+    grid-auto-columns: calc(50% - 8px); 
+  }
+}
+
+@media (max-width: 480px) {
+  .review-scroll-container {
+    /* 모바일: 1줄로 변경하고 85% 너비로 다음 카드 살짝 보이게 */
+    grid-template-rows: repeat(1, 1fr); 
+    grid-auto-columns: 85%;
+    padding: 0 10px;
+  }
+}
 </style>

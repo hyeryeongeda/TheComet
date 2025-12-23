@@ -300,13 +300,24 @@ watch(() => tmdbId.value, loadAll)
 </script>
 
 <style scoped>
-/* 페이지 기본 설정 */
-.page { background-color: #fff; padding-bottom: 100px; min-height: 100vh; }
-.loading-screen, .error-screen { padding: 100px; text-align: center; color: #888; }
+
+.page { 
+  background: var(--bg); /* ✅ 배경은 primary가 아닌 bg여야 합니다 */
+  padding-bottom: 100px; 
+  min-height: 100vh; 
+  color: var(--text); 
+}
+
+.loading-screen, .error-screen { 
+  padding: 100px; 
+  text-align: center; 
+  color: var(--muted); /* #888 -> var(--muted) */
+}
+
 .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
 .body-wrapper { margin-top: 30px; }
 
-/* 상단 정보 영역 (포스터 + 정보) */
+/* 상단 정보 영역 */
 .top-section {
   display: flex;
   gap: 30px;
@@ -314,9 +325,22 @@ watch(() => tmdbId.value, loadAll)
 }
 
 .poster-area { flex-shrink: 0; width: 240px; }
-.poster-card { width: 100%; border-radius: 4px; overflow: hidden; border: 1px solid #e3e3e3; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.poster-card { 
+  width: 100%; 
+  border-radius: 4px; 
+  overflow: hidden; 
+  border: 1px solid var(--border); /* #e3e3e3 -> var(--border) */
+  box-shadow: var(--shadow); /* rgba -> var(--shadow) */
+}
 .poster-img { width: 100%; display: block; }
-.poster-fallback { height: 350px; background: #eee; display: flex; align-items: center; justify-content: center; color: #aaa; }
+.poster-fallback { 
+  height: 350px; 
+  background: var(--card); /* var(--primary) -> var(--card) */
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  color: var(--muted); 
+}
 
 .main-info {
   flex: 1;
@@ -328,17 +352,31 @@ watch(() => tmdbId.value, loadAll)
 .overview {
   font-size: 15px;
   line-height: 1.6;
-  color: #4a4a4a;
+  color: var(--text); /* #4a4a4a -> var(--text) */
+  opacity: 0.9; /* 줄거리는 살짝 불투명하게 가독성 조절 */
   white-space: pre-wrap;
   margin-top: 10px;
 }
 
 /* 섹션 공통 스타일 */
-.section-divider { height: 1px; background: #e3e3e3; margin: 40px 0; }
-.sub-title { font-size: 20px; font-weight: 800; color: #000; margin-bottom: 20px; }
-.no-data { color: #999; font-size: 14px; padding: 20px 0; }
+.section-divider { 
+  height: 1px; 
+  background: var(--border); /* var(--primary) -> var(--border) */
+  margin: 40px 0; 
+}
+.sub-title { 
+  font-size: 20px; 
+  font-weight: 800; 
+  color: var(--text); /* #000 -> var(--text) */
+  margin-bottom: 20px; 
+}
+.no-data { 
+  color: var(--muted); /* #999 -> var(--muted) */
+  font-size: 14px; 
+  padding: 20px 0; 
+}
 
-/* 모바일 대응 (768px 이하) */
+/* 모바일 대응 */
 @media (max-width: 768px) {
   .top-section {
     flex-direction: column;
@@ -350,7 +388,9 @@ watch(() => tmdbId.value, loadAll)
     position: relative;
     z-index: 10;
   }
-  .poster-card { border: 2px solid white; }
+  .poster-card { 
+    border: 2px solid var(--primary); /* 모바일 포인트는 유지 가능 */
+  }
   .main-info {
     width: 100%;
     text-align: center;

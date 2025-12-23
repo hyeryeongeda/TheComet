@@ -175,7 +175,7 @@ const scrollToBottom = async () => {
 </script>
 
 <style scoped>
-/* 🎨 모든 레이아웃 수치는 유지하고 색상만 변수로 교체 */
+
 .ai-recommend-layout { display: flex; gap: 20px; max-width: 1100px; margin: 0 auto; height: 750px; }
 
 /* 왼쪽 사이드바 */

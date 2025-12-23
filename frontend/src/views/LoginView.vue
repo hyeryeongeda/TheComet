@@ -95,28 +95,30 @@ function goSignup() {
   router.push('/signup')
 }
 
-function onSocial(provider) {
-  // 소셜은 다음 단계에서 실제 연동 붙이기
-  alert(`${provider} 소셜 로그인은 다음 단계에서 연결할게요!`)
-}
+
 </script>
 
 <style scoped>
+/* 🎨 레이아웃 구조는 유지하고 색상만 테마 변수로 교체 */
+
 .auth-backdrop {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.6);
+  /* 백그라운드를 테마 배경색으로 대응하거나, 기존의 반투명 느낌을 유지 */
+  background: var(--bg); 
   padding: 24px;
+  transition: background-color 0.3s;
 }
 
 .auth-card {
   width: 100%;
   max-width: 420px;
-  background: #fff;
+  background: var(--card); /* #fff -> var(--card) */
+  border: 1px solid var(--border); /* 테두리 추가로 다크모드 가시성 확보 */
   border-radius: 16px;
   padding: 22px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow); /* 고정값 -> var(--shadow) */
 }
 
 .brand {
@@ -135,6 +137,8 @@ function onSocial(provider) {
 .brand h1 {
   margin: 0;
   font-size: 20px;
+  color: var(--text); /* 글자색 대응 */
+  font-weight: 900;
 }
 
 .form {
@@ -144,18 +148,23 @@ function onSocial(provider) {
 
 .label {
   font-size: 12px;
-  color: #555;
+  color: var(--muted); /* #555 -> var(--muted) */
+  font-weight: 700;
 }
 
 .input {
-  border: 1px solid #ddd;
+  border: 1px solid var(--border); /* #ddd -> var(--border) */
+  background: var(--input-bg);    /* 배경색 대응 */
+  color: var(--text);             /* 입력 글자색 대응 */
   border-radius: 10px;
   padding: 12px;
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .input:focus {
-  border-color: #aaa;
+  border-color: var(--primary); /* #aaa -> var(--primary) 포인트 컬러 */
+  box-shadow: 0 0 0 3px var(--primary-weak);
 }
 
 .btn {
@@ -163,20 +172,28 @@ function onSocial(provider) {
   padding: 12px;
   border-radius: 10px;
   border: 0;
-  background: #111;
-  color: #fff;
+  background: var(--primary); /* #111 -> var(--primary) */
+  color: #fff; /* 버튼 글자는 항상 흰색 유지 (가독성) */
   cursor: pointer;
+  font-weight: 800;
+  transition: opacity 0.2s;
+}
+
+.btn:hover:not(:disabled) {
+  opacity: 0.9;
+  filter: brightness(1.1);
 }
 
 .btn:disabled {
-  opacity: 0.6;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .error {
   margin: 8px 0 0;
-  color: #d33;
+  color: #ff4d4f; /* 에러는 강렬한 레드 유지 혹은 var(--primary) 활용 */
   font-size: 13px;
+  font-weight: 700;
 }
 
 .social {
@@ -189,21 +206,34 @@ function onSocial(provider) {
 .social-btn {
   padding: 10px;
   border-radius: 10px;
-  border: 1px solid #ddd;
-  background: #fafafa;
+  border: 1px solid var(--border); /* #ddd -> var(--border) */
+  background: var(--bg);           /* #fafafa -> var(--bg) */
+  color: var(--text);              /* 글자색 대응 */
   cursor: pointer;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.social-btn:hover {
+  background: var(--primary-weak);
 }
 
 .footer {
   margin-top: 16px;
   font-size: 13px;
-  color: #666;
+  color: var(--muted); /* #666 -> var(--muted) */
+  text-align: center;
 }
 
 .link {
-  color: #111;
-  font-weight: 700;
+  color: var(--primary); /* #111 -> var(--primary) 포인트 컬러 */
+  font-weight: 800;
   cursor: pointer;
   margin-left: 6px;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
 }
 </style>

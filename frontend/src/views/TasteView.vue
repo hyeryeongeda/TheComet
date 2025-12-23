@@ -111,6 +111,9 @@ import {
 } from 'chart.js'
 import { Radar } from 'vue-chartjs'
 import { fetchTasteDNA, fetchMyActivity } from '@/api/comet'
+import { useThemeStore } from '@/stores/theme'
+
+const themeStore = useThemeStore()
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend)
 
@@ -148,6 +151,69 @@ const filteredMovies = computed(() => {
   }
   
   return list
+})
+
+const getCSSVar = (varName) => {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim()
+}
+
+// 📊 차트 데이터 설정 (차트 내부의 선, 채우기 색상 스타일)
+const chartData = computed(() => {
+  // 테마가 바뀔 때마다 이 계산이 다시 실행됩니다.
+  const primaryColor = getCSSVar('--primary') || '#e50914'
+  const primaryWeak = getCSSVar('--primary-weak') || 'rgba(229, 9, 20, 0.2)'
+
+  return {
+    labels: GENRE_LABELS,
+    datasets: [{
+      label: '선호도',
+      data: GENRE_LABELS.map(l => radarScores.value[l] || 0),
+      backgroundColor: primaryWeak,    // ✅ --primary-weak 변수 적용
+      borderColor: primaryColor,      // ✅ --primary 변수 적용
+      borderWidth: 2,
+      pointBackgroundColor: primaryColor,
+      pointBorderColor: '#fff',
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: primaryColor
+    }]
+  }
+})
+
+// ⚙️ 차트 옵션 설정 (글자색, 그리드 색상 스타일)
+const chartOptions = computed(() => {
+  const textColor = getCSSVar('--text') || '#111111'
+  const borderColor = getCSSVar('--border') || '#e5e7eb'
+
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      r: {
+        suggestedMin: 0,
+        suggestedMax: 100,
+        ticks: { display: false },
+        // 거미줄 라인 색상 스타일
+        grid: {
+          color: borderColor, // ✅ --border 변수 적용
+        },
+        // 장르명 텍스트 스타일
+        pointLabels: {
+          color: textColor,   // ✅ --text 변수 적용
+          font: {
+            size: 12,
+            weight: '600'
+          }
+        },
+        // 축 라인 색상 스타일
+        angleLines: {
+          color: borderColor // ✅ --border 변수 적용
+        }
+      }
+    },
+    plugins: {
+      legend: { display: false }
+    }
+  }
 })
 
 function openModal(type) {
@@ -194,31 +260,6 @@ function normalizeMovies(list) {
   }))
 }
 
-// 차트 설정
-const chartData = computed(() => ({
-  labels: GENRE_LABELS,
-  datasets: [{
-    label: '선호도',
-    data: GENRE_LABELS.map(l => radarScores.value[l] || 0),
-    backgroundColor: 'rgba(140, 140, 255, 0.3)',
-    borderColor: 'rgba(140, 140, 255, 1)',
-    borderWidth: 2,
-    pointBackgroundColor: 'rgba(140, 140, 255, 1)',
-  }]
-}))
-
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  scales: {
-    r: {
-      suggestedMin: 0,
-      suggestedMax: 100,
-      ticks: { display: false },
-      pointLabels: { font: { size: 12, weight: '600' } }
-    }
-  }
-}
 
 function tmdbPoster(path) { return path ? `https://image.tmdb.org/t/p/w342${path}` : '' }
 
@@ -268,7 +309,6 @@ onMounted(loadTaste)
 
 
 <style scoped>
-/* 🎨 레이아웃 구조는 유지하고 색상만 테마 변수로 교체 */
 
 .taste-page { 
   max-width: 1000px; 
@@ -409,5 +449,21 @@ onMounted(loadTaste)
   .summary-section { flex-direction: column; }
   .movie-grid, .modal-grid { grid-template-columns: repeat(2, 1fr); }
   .modal-header { flex-direction: column; gap: 15px; text-align: center; }
+}
+
+.chart-section { 
+  display: flex; 
+  justify-content: center; 
+  margin-bottom: 60px; 
+  background: var(--bg); /* 배경색 대응 */
+}
+
+.chart-wrapper { 
+  width: 100%; 
+  max-width: 450px; 
+  height: 400px; 
+  padding: 20px;
+  background: var(--card); /* 카드 배경 위에 차트를 띄울 경우 */
+  border-radius: 20px;
 }
 </style>

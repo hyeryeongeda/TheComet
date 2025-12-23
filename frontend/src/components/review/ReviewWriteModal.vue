@@ -83,35 +83,118 @@ function onDelete() {
 </script>
 
 <style scoped>
-/* 기존 스타일 유지 */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-.modal-content { background: white; width: 600px; height: 500px; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-.modal-header { padding: 16px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-.modal-header h3 { margin: 0; font-size: 18px; font-weight: 700; color: #000; }
-.close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
-.modal-body { flex: 1; padding: 20px; display: flex; flex-direction: column; }
-.rating-select-area { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #f5f5f5; }
-.label { font-size: 14px; font-weight: 700; color: #333; }
+/* 🎨 레이아웃 구조는 유지하고 색상만 테마 변수로 교체 */
+
+.modal-overlay { 
+  position: fixed; inset: 0; 
+  background: rgba(0, 0, 0, 0.7); /* 오버레이는 가독성을 위해 어둡게 유지 */
+  z-index: 2000; 
+  display: flex; align-items: center; justify-content: center; 
+  backdrop-filter: blur(4px); /* 배경 흐림으로 몰입감 유도 */
+}
+
+.modal-content { 
+  background: var(--card); /* white -> var(--card) */
+  width: 600px; height: 500px; 
+  border-radius: 12px; 
+  display: flex; flex-direction: column; overflow: hidden; 
+  box-shadow: var(--shadow); /* rgba -> var(--shadow) */
+  border: 1px solid var(--border); /* 다크 테마 경계선 확보 */
+}
+
+.modal-header { 
+  padding: 16px 20px; 
+  border-bottom: 1px solid var(--border); /* #eee -> var(--border) */
+  display: flex; justify-content: space-between; align-items: center; 
+}
+
+.modal-header h3 { 
+  margin: 0; font-size: 18px; font-weight: 700; 
+  color: var(--text); /* #000 -> var(--text) */
+}
+
+.close-btn { 
+  background: none; border: none; font-size: 24px; 
+  cursor: pointer; color: var(--muted); /* #999 -> var(--muted) */
+}
+
+.modal-body { 
+  flex: 1; padding: 20px; display: flex; flex-direction: column; 
+  background: var(--card);
+}
+
+.rating-select-area { 
+  display: flex; align-items: center; gap: 10px; 
+  margin-bottom: 16px; padding-bottom: 16px; 
+  border-bottom: 1px solid var(--border); /* #f5f5f5 -> var(--border) */
+}
+
+.label { 
+  font-size: 14px; font-weight: 700; 
+  color: var(--text); /* #333 -> var(--text) */
+}
+
 .stars { display: flex; cursor: pointer; }
-.star-icon { font-size: 24px; color: #e0e0e0; transition: color 0.2s; margin-right: 2px; }
-.star-icon.active { color: #ffad1f; }
+.star-icon { 
+  font-size: 24px; 
+  color: var(--border); /* #e0e0e0 -> var(--border) */
+  transition: color 0.2s; margin-right: 2px; 
+}
+.star-icon.active { color: #ffad1f; } /* 별점 금색은 시인성을 위해 유지 */
 .rating-text { font-size: 14px; font-weight: 700; color: #ffad1f; margin-left: 4px; }
-.review-input { width: 100%; flex: 1; border: none; outline: none; resize: none; font-size: 16px; line-height: 1.6; color: #333; }
-.review-input::placeholder { color: #ccc; }
 
-/* ✅ [수정] 푸터 레이아웃 (양쪽 정렬) */
-.modal-footer { padding: 12px 20px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+.review-input { 
+  width: 100%; flex: 1; border: none; outline: none; resize: none; 
+  font-size: 16px; line-height: 1.6; 
+  background: transparent;
+  color: var(--text); /* #333 -> var(--text) */
+}
+.review-input::placeholder { 
+  color: var(--muted); /* #ccc -> var(--muted) */
+}
 
-/* ✅ [추가] 오른쪽 그룹 묶음 */
+/* 푸터 레이아웃 (양쪽 정렬 유지) */
+.modal-footer { 
+  padding: 12px 20px; 
+  border-top: 1px solid var(--border); /* #eee -> var(--border) */
+  display: flex; justify-content: space-between; align-items: center; 
+}
+
 .right-group { display: flex; align-items: center; gap: 12px; }
 
-/* ✅ [추가] 삭제 버튼 스타일 */
-.delete-btn { background: none; border: none; color: #999; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: underline; }
-.delete-btn:hover { color: #ff2f6e; }
+/* 삭제 버튼 스타일 */
+.delete-btn { 
+  background: none; border: none; 
+  color: var(--muted); /* #999 -> var(--muted) */
+  font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: underline; 
+}
+.delete-btn:hover { 
+  color: var(--primary); /* #ff2f6e -> var(--primary) 포인트 컬러 */
+}
 
-.text-counter { font-size: 13px; color: #aaa; }
-.save-btn { background: #ff2f6e; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 700; font-size: 15px; cursor: pointer; transition: background 0.2s; }
-.save-btn:disabled { background: #e0e0e0; color: #999; cursor: not-allowed; }
-.save-btn:hover:not(:disabled) { background: #fa0050; }
-@media (max-width: 768px) { .modal-content { width: 95%; height: 80vh; } }
+.text-counter { 
+  font-size: 13px; 
+  color: var(--muted); /* #aaa -> var(--muted) */
+  opacity: 0.8;
+}
+
+.save-btn { 
+  background: var(--primary); /* #ff2f6e -> var(--primary) */
+  color: white; border: none; padding: 10px 24px; 
+  border-radius: 6px; font-weight: 700; font-size: 15px; 
+  cursor: pointer; transition: background 0.2s; 
+}
+.save-btn:disabled { 
+  background: var(--border); /* #e0e0e0 -> var(--border) */
+  color: var(--muted); /* #999 -> var(--muted) */
+  cursor: not-allowed; 
+}
+.save-btn:hover:not(:disabled) { 
+  opacity: 0.9; 
+  filter: brightness(1.1);
+}
+
+@media (max-width: 768px) { 
+  .modal-content { width: 95%; height: 80vh; } 
+}
 </style>

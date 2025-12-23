@@ -164,50 +164,67 @@ function formatDate(dateString) {
 </script>
 
 <style scoped>
+/* 🎨 레이아웃 구조는 유지하고 색상만 테마 변수로 교체 */
+
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999;
+  position: fixed; inset: 0; 
+  background: rgba(0, 0, 0, 0.7); /* 오버레이는 가독성을 위해 어둡게 유지 */
+  z-index: 9999;
   display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px); /* 배경 흐림으로 몰입감 유도 */
 }
 
 .modal-card {
-  width: 600px; height: 700px; background: white; border-radius: 12px;
+  width: 600px; height: 700px; 
+  background: var(--card); /* white -> var(--card) */
+  border-radius: 12px;
   display: flex; flex-direction: column; overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  box-shadow: var(--shadow); /* rgba -> var(--shadow) */
+  border: 1px solid var(--border); /* 다크모드 경계선 확보 */
 }
 
 /* 1. 헤더 */
 .modal-header {
-  height: 60px; padding: 0 20px; border-bottom: 1px solid #eee;
+  height: 60px; padding: 0 20px; 
+  border-bottom: 1px solid var(--border); /* #eee -> var(--border) */
   display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+  background: var(--card);
 }
 .user-profile { display: flex; align-items: center; gap: 10px; }
 .user-profile.clickable { cursor: pointer; }
-.user-profile.clickable:hover .u-name { text-decoration: underline; }
+.user-profile.clickable:hover .u-name { text-decoration: underline; color: var(--primary); }
 
-.u-img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
-.u-icon { font-size: 28px; color: #ccc; }
-.u-name { font-weight: 700; font-size: 15px; color: #333; }
-.close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+.u-img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
+.u-icon { font-size: 28px; color: var(--muted); } /* #ccc -> var(--muted) */
+.u-name { font-weight: 700; font-size: 15px; color: var(--text); } /* #333 -> var(--text) */
+.close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--muted); }
 
 /* 2. 본문 */
-.modal-body { flex: 1; overflow-y: auto; padding: 20px; }
+.modal-body { 
+  flex: 1; overflow-y: auto; padding: 20px; 
+  background: var(--card); /* 배경 통일 */
+}
 
-/* 메타 정보 (포스터 + 제목/별점) */
+/* 메타 정보 */
 .review-meta-row { display: flex; gap: 16px; margin-bottom: 16px; }
 .small-poster {
   width: 60px; height: 90px; border-radius: 4px; overflow: hidden;
-  flex-shrink: 0; cursor: pointer; background: #eee;
+  flex-shrink: 0; cursor: pointer; 
+  background: var(--bg); /* #eee -> var(--bg) */
+  border: 1px solid var(--border);
 }
 .small-poster img { width: 100%; height: 100%; object-fit: cover; }
 .meta-info { display: flex; flex-direction: column; justify-content: center; gap: 4px; }
-.movie-title { font-weight: 700; font-size: 16px; color: #333; cursor: pointer; }
-.movie-title:hover { text-decoration: underline; }
-.rating-date { font-size: 13px; color: #888; display: flex; gap: 8px; }
-.star { color: #ffad1f; font-weight: 700; }
+.movie-title { font-weight: 700; font-size: 16px; color: var(--text); cursor: pointer; }
+.movie-title:hover { text-decoration: underline; color: var(--primary); }
+.rating-date { font-size: 13px; color: var(--muted); display: flex; gap: 8px; }
+.star { color: #ffad1f; font-weight: 700; } /* 별점 금색은 유지 */
 
 /* 리뷰 텍스트 */
 .review-content {
-  font-size: 15px; line-height: 1.6; color: #333; margin-bottom: 20px; white-space: pre-wrap;
+  font-size: 15px; line-height: 1.6; 
+  color: var(--text); /* #333 -> var(--text) */
+  margin-bottom: 20px; white-space: pre-wrap;
 }
 
 /* 액션 바 */
@@ -215,43 +232,66 @@ function formatDate(dateString) {
   display: flex; gap: 16px; align-items: center; padding-bottom: 16px;
 }
 .action-btn, .action-item {
-  display: flex; align-items: center; gap: 6px; font-size: 13px; color: #777;
+  display: flex; align-items: center; gap: 6px; font-size: 13px; 
+  color: var(--muted); /* #777 -> var(--muted) */
   background: none; border: none; padding: 0; cursor: pointer;
+  transition: color 0.2s;
 }
 .action-item { cursor: default; }
-.action-btn:hover { color: #333; }
-.action-btn.active { color: #ff2f6e; font-weight: 700; }
+.action-btn:hover { color: var(--text); }
+.action-btn.active { color: var(--primary); font-weight: 700; } /* #ff2f6e -> var(--primary) */
 
-.divider { height: 1px; background: #f0f0f0; margin-bottom: 16px; }
+.divider { height: 1px; background: var(--border); margin-bottom: 16px; } /* #f0f0f0 -> var(--border) */
 
 /* 대댓글 리스트 */
 .replies-list { display: flex; flex-direction: column; gap: 16px; }
-.no-replies { text-align: center; color: #ccc; padding: 20px 0; font-size: 13px; }
-.reply-item { background: #f9f9f9; padding: 12px; border-radius: 8px; }
+.no-replies { text-align: center; color: var(--muted); padding: 20px 0; font-size: 13px; }
+.reply-item { 
+  background: var(--bg); /* #f9f9f9 -> var(--bg) 카드 위 또 다른 배경층 */
+  padding: 12px; border-radius: 8px; 
+  border: 1px solid var(--border);
+}
 .r-head { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
-.r-user { font-weight: 700; color: #444; }
+.r-user { font-weight: 700; color: var(--text); } /* #444 -> var(--text) */
 .r-right { display: flex; align-items: center; gap: 8px; }
-.r-date { color: #aaa; }
-.del-reply-btn { font-size: 11px; color: #999; border: none; background: none; cursor: pointer; text-decoration: underline; padding: 0; }
-.del-reply-btn:hover { color: #ff2f6e; }
-.r-body { font-size: 14px; color: #333; line-height: 1.4; }
+.r-date { color: var(--muted); }
+.del-reply-btn { font-size: 11px; color: var(--muted); border: none; background: none; cursor: pointer; text-decoration: underline; padding: 0; }
+.del-reply-btn:hover { color: var(--primary); }
+.r-body { font-size: 14px; color: var(--text); line-height: 1.4; }
 
 /* 3. 하단 푸터 (입력창) */
 .modal-footer {
-  height: 70px; padding: 0 20px; border-top: 1px solid #eee;
-  display: flex; align-items: center; gap: 10px; background: #fff; flex-shrink: 0;
+  height: 70px; padding: 0 20px; 
+  border-top: 1px solid var(--border); /* #eee -> var(--border) */
+  display: flex; align-items: center; gap: 10px; 
+  background: var(--card); /* #fff -> var(--card) */
+  flex-shrink: 0;
 }
 .reply-input {
-  flex: 1; padding: 12px 16px; border: 1px solid #ddd; border-radius: 99px;
-  outline: none; font-size: 14px; background: #f8f8f8;
+  flex: 1; padding: 12px 16px; 
+  border: 1px solid var(--border); /* #ddd -> var(--border) */
+  background: var(--input-bg); /* #f8f8f8 -> var(--input-bg) */
+  color: var(--text);
+  border-radius: 99px;
+  outline: none; font-size: 14px;
+  transition: all 0.2s;
 }
-.reply-input:focus { background: white; border-color: #bbb; }
+.reply-input:focus { 
+  background: var(--card); 
+  border-color: var(--primary); /* #bbb -> var(--primary) */
+  box-shadow: 0 0 0 2px var(--primary-weak);
+}
 .submit-btn {
-  background: #e0e0e0; color: #777; border: none; padding: 10px 20px;
+  background: var(--border); /* #e0e0e0 -> var(--border) */
+  color: var(--muted); /* #777 -> var(--muted) */
+  border: none; padding: 10px 20px;
   border-radius: 99px; font-weight: 700; cursor: default; transition: all 0.2s;
 }
-.submit-btn:not(:disabled) { background: #ff2f6e; color: white; cursor: pointer; }
-.submit-btn:not(:disabled):hover { background: #fa0050; }
+.submit-btn:not(:disabled) { 
+  background: var(--primary); /* #ff2f6e -> var(--primary) */
+  color: white; cursor: pointer; 
+}
+.submit-btn:not(:disabled):hover { opacity: 0.9; transform: scale(1.05); }
 
 @media (max-width: 600px) {
   .modal-card { width: 95%; height: 80vh; }

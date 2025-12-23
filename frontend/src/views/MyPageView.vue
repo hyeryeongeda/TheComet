@@ -1,6 +1,11 @@
 <template>
   <div class="page">
-    <MyPageProfileCard :user="user" @edit="openEdit = true" />
+    <MyPageProfileCard 
+      :user="user" 
+      @edit="openEdit = true" 
+      @open-follow="onOpenFollowModal"
+    />
+    
     <MyPageTabs v-model="tab" />
 
     <div v-if="tab === 'vault'" class="content">
@@ -33,7 +38,6 @@
     </div>
 
     <div v-else class="content">
-      
       <MyPageSection 
         title="인물 (자신이 좋아요를 누른)" 
         :moreLink="{ name: 'mypage-grid', params: { type: 'liked_people' }}"
@@ -71,13 +75,21 @@
       :review="selectedReview" 
       @close="isReviewModalOpen = false" 
     />
+
+    <UserListModal 
+      v-if="isUserModalOpen"
+      :title="userModalTitle"
+      :users="userModalList"
+      @close="isUserModalOpen = false"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { fetchMyActivity, fetchMyLikes, togglePersonLike, fetchMyLikedPeople } from '@/api/comet' 
+// ✅ [추가] fetchFollowList 임포트
+import { fetchMyActivity, fetchMyLikes, togglePersonLike, fetchMyLikedPeople, fetchFollowList } from '@/api/comet' 
 
 import MyPageProfileCard from '@/components/mypage/MyPageProfileCard.vue'
 import MyPageTabs from '@/components/mypage/MyPageTabs.vue'
@@ -86,8 +98,9 @@ import MovieCard from '@/components/movie/MovieCard.vue'
 import PersonCard from '@/components/movie/PersonCard.vue' 
 import ReviewCard from '@/components/review/ReviewCard.vue'
 import ProfileEditModal from '@/components/user/ProfileEditModal.vue' 
-// ✅ [추가] 리뷰 상세 모달 임포트 (경로 확인해주세요!)
 import ReviewDetailModal from '@/components/review/ReviewDetailModal.vue'
+// ✅ [추가] 유저 리스트 모달 임포트
+import UserListModal from '@/components/mypage/UserListModal.vue'
 
 const auth = useAuthStore()
 const user = computed(() => auth.user)
@@ -95,9 +108,13 @@ const user = computed(() => auth.user)
 const tab = ref('vault')
 const openEdit = ref(false)
 
-// ✅ [추가] 리뷰 모달 관련 상태
 const isReviewModalOpen = ref(false)
 const selectedReview = ref(null)
+
+// ✅ [추가] 유저 모달 관련 상태
+const isUserModalOpen = ref(false)
+const userModalTitle = ref('')
+const userModalList = ref([])
 
 const commentedList = ref([])
 const movieLikesList = ref([])
@@ -109,7 +126,6 @@ function onProfileSaved(updatedUser) {
   auth.user = { ...auth.user, ...updatedUser }
 }
 
-// 인물 좋아요 취소 핸들러 (기존 유지)
 async function handleUnlikePerson(person) {
   likedPeople.value = likedPeople.value.filter(p => p.tmdb_id !== person.tmdb_id)
   try {
@@ -120,10 +136,25 @@ async function handleUnlikePerson(person) {
   }
 }
 
-// ✅ [추가] 리뷰 모달 열기 함수
 function openReviewModal(review) {
   selectedReview.value = review
   isReviewModalOpen.value = true
+}
+
+// ✅ [추가] 팔로워/팔로잉 모달 열기 함수
+async function onOpenFollowModal(type) {
+  // 1. 제목 설정
+  userModalTitle.value = (type === 'followers') ? '팔로워' : '팔로잉'
+  userModalList.value = [] // 초기화
+  isUserModalOpen.value = true // 모달 열기
+
+  // 2. API 호출
+  try {
+    const list = await fetchFollowList(user.value.username, type)
+    userModalList.value = list
+  } catch (e) {
+    console.error("팔로우 리스트 로드 실패", e)
+  }
 }
 
 onMounted(async () => {

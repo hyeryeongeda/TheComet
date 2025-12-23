@@ -16,4 +16,5 @@ urlpatterns = [
     path("users/<str:username>/follow/", views.follow_toggle),
 
     path("social/<str:provider>/", views.social_login_placeholder),
+    path('users/<str:username>/follow-list/<str:type>/', views.user_follow_list),
 ]

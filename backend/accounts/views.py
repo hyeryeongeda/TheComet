@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from rest_framework.parsers import MultiPartParser, FormParser # ✅ Parser들 추가
-
+from django.shortcuts import get_object_or_404
 from .models import Follow, UserSetting
 from .serializers import (
     SignupSerializer,
@@ -165,3 +165,36 @@ def social_login_placeholder(request, provider):
         {"detail": f"{provider} 소셜 로그인은 다음 단계에서 실제 연동 로직을 붙입니다."},
         status=status.HTTP_501_NOT_IMPLEMENTED,
     )
+
+
+
+# [추가] 팔로워/팔로잉 목록 조회
+@api_view(['GET'])
+@permission_classes([AllowAny]) # 비로그인 유저도 볼 수 있게 하려면 AllowAny
+def user_follow_list(request, username, type):
+    target_user = get_object_or_404(User, username=username)
+    
+    if type == 'followers':
+        # 나를 팔로우하는 사람들 (Follow 테이블의 from_user들)
+        relations = Follow.objects.filter(to_user=target_user).select_related('from_user')
+        users = [r.from_user for r in relations]
+    elif type == 'following':
+        # 내가 팔로우하는 사람들 (Follow 테이블의 to_user들)
+        relations = Follow.objects.filter(from_user=target_user).select_related('to_user')
+        users = [r.to_user for r in relations]
+    else:
+        return Response(status=400)
+
+    # 필요한 정보만 간단히 리턴 (UserSerializer 재사용 또는 직접 구성)
+    data = []
+    for u in users:
+        data.append({
+            'id': u.id,
+            'username': u.username,
+            'profile_image': u.profile_image.url if u.profile_image else None,
+            'email': u.email
+        })
+    
+    return Response(data)
+
+

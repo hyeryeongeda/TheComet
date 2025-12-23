@@ -294,3 +294,13 @@ export async function fetchMyLikedPeople() {
   return res.data
 }
 
+
+
+export async function fetchFollowList(username, type) {
+  const res = await api.get(`/accounts/users/${username}/follow-list/${type}/`)
+  return res.data
+}
+
+
+
+

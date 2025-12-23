@@ -10,28 +10,33 @@
         <button class="btn-edit" @click="$emit('edit')">프로필 수정</button>
       </div>
     </div>
+    
     <div class="stats">
-      <div class="stat-item"><span>팔로잉</span> <b>{{ user?.following_count || 0 }}</b></div>
-      <div class="stat-item"><span>팔로워</span> <b>{{ user?.followers_count || 0 }}</b></div>
+      <div class="stat-item" @click="$emit('open-follow', 'following')">
+        <span>팔로잉</span> <b>{{ user?.following_count || 0 }}</b>
+      </div>
+      
+      <div class="stat-item" @click="$emit('open-follow', 'followers')">
+        <span>팔로워</span> <b>{{ user?.followers_count || 0 }}</b>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup>
-
-  // MyPageProfileCard.vue 또는 MyPageView.vue
-
 /** ✅ 이미지 URL 보정 함수 */
 function getProfileImageUrl(path) {
   if (!path) return null
-  if (path.startsWith('http')) return path // 이미 풀 경로면 그대로 반환
-  return `http://127.0.0.1:8000${path}` // 백엔드 서버 주소 합치기
+  if (path.startsWith('http')) return path 
+  return `http://127.0.0.1:8000${path}` 
 }
 
 defineProps({
   user: Object
 })
-defineEmits(['edit'])
+
+// ✅ [수정] 부모에게 보낼 이벤트 정의에 'open-follow' 추가
+defineEmits(['edit', 'open-follow'])
 </script>
 
 <style scoped>
@@ -45,4 +50,15 @@ defineEmits(['edit'])
 .btn-edit { padding: 6px 12px; border: 1px solid var(--border); background: var(--card); border-radius: 4px; cursor: pointer; font-size: 13px; color: var(--text); }
 .stats { display: flex; justify-content: center; gap: 20px; color: var(--muted); font-size: 14px; }
 .stats b { color: var(--text); font-weight: 900; margin-left: 4px; }
+
+/* ✅ [추가] 클릭 가능한 느낌을 주기 위한 스타일 */
+.stat-item {
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.stat-item:hover {
+  opacity: 0.7;
+  transform: scale(1.05); /* 살짝 커지는 효과 */
+  color: #ff2f6e; /* 포인트 컬러 (선택사항) */
+}
 </style>

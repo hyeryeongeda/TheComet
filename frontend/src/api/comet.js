@@ -182,6 +182,7 @@ export async function fetchTasteDNA() {
 
 
 
+
 // =========================
 // 마이페이지
 // =========================
@@ -287,7 +288,7 @@ export async function togglePersonLike(personId, payload) {
   return res.data
 }
 
-// src/api/comet.js 에 추가
+
 export async function fetchMyLikedPeople() {
   // 백엔드 URL과 일치해야 함
   const res = await api.get('/movies/me/liked-people/', authConfig())
@@ -303,4 +304,23 @@ export async function fetchFollowList(username, type) {
 
 
 
+// 아이디 찾기(메일로 username 안내)
+export const findUsernameApi = (payload) => {
+  return api.post('accounts/find-username/', payload)
+}
+
+// 비번 재설정 링크 요청(메일 전송)
+export const passwordResetRequestApi = (payload) => {
+  return api.post('accounts/password-reset/request/', payload)
+}
+
+// 비번 재설정 확정(uid/token + 새 비번)
+export const passwordResetConfirmApi = (payload) => {
+  return api.post('accounts/password-reset/confirm/', payload)
+}
+// 탈퇴
+export const withdrawAccount = (password = '') => {
+
+  return api.post('/accounts/withdraw/', { password })
+}
 

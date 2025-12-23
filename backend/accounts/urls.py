@@ -17,4 +17,8 @@ urlpatterns = [
 
     path("social/<str:provider>/", views.social_login_placeholder),
     path('users/<str:username>/follow-list/<str:type>/', views.user_follow_list),
+    path("withdraw/", views.withdraw, name="withdraw"),
+    path("find-username/", views.find_username, name="find_username"),
+    path("password-reset/request/", views.password_reset_request, name="password_reset_request"),
+    path("password-reset/confirm/", views.password_reset_confirm, name="password_reset_confirm"),
 ]

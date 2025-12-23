@@ -157,3 +157,28 @@ class FollowToggleResultSerializer(serializers.Serializer):
     followers_count = serializers.IntegerField()
     following_count = serializers.IntegerField()
 
+
+class WithdrawSerializer(serializers.Serializer):
+    # 일반 계정이면 password 필요, 소셜/비번없는 계정이면 빈 값 허용
+    password = serializers.CharField(required=False, allow_blank=True, write_only=True)
+
+
+class FindUsernameSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    birth_date = serializers.DateField(required=False)  # 선택(있으면 검증에 사용)
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(min_length=8, write_only=True)
+    new_password2 = serializers.CharField(min_length=8, write_only=True)
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["new_password2"]:
+            raise serializers.ValidationError("비밀번호가 일치하지 않습니다.")
+        return attrs

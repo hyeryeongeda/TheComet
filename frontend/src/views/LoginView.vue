@@ -9,14 +9,14 @@
 
       <!-- 로그인 폼 -->
       <form class="form" @submit.prevent="onSubmit">
-        <label class="label">아이디(Username)</label>
+        <label class="label">아이디 또는 이메일</label>
         <input
           v-model.trim="form.username"
           class="input"
           type="text"
           name="username"
           autocomplete="username"
-          placeholder="user1"
+          placeholder="user1 또는 user1@email.com"
         />
 
         <label class="label">비밀번호</label>
@@ -40,6 +40,11 @@
         <p>
           아직 계정이 없나요?
           <a class="link" @click.prevent="goSignup">회원가입</a>
+        </p>
+        <p class="helper">
+          <a class="link" @click.prevent="goFindUsername">아이디 찾기</a>
+          <span class="divider">·</span>
+          <a class="link" @click.prevent="goResetPassword">비밀번호 재설정</a>
         </p>
       </div>
     </div>
@@ -93,6 +98,14 @@ async function onSubmit() {
 
 function goSignup() {
   router.push('/signup')
+}
+
+function goFindUsername() {
+  router.push('/find-username')
+}
+
+function goResetPassword() {
+  router.push('/reset-password')
 }
 
 
@@ -236,4 +249,14 @@ function goSignup() {
 .link:hover {
   text-decoration: underline;
 }
+
+.helper {
+  margin-top: 8px;
+}
+
+.divider {
+  margin: 0 8px;
+  opacity: 0.6;
+}
+
 </style>

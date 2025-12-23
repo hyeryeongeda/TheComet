@@ -9,10 +9,10 @@ const routes = [
     component: () => import('@/views/MovieDetailView.vue'),
     props: true,
   },
-
   { path: '/login', name: 'login', component: () => import('@/views/LoginView.vue') },
+  { path: '/find-username',  name: 'find-username', component: () => import('@/views/auth/FindUsernameView.vue')},
+  { path: '/reset-password', name: 'reset-password', component: () => import('@/views/auth/ResetPasswordView.vue')},
   { path: '/signup', name: 'signup', component: () => import('@/views/SignupView.vue') },
-
   {
     path: '/taste',
     name: 'taste',
@@ -27,48 +27,44 @@ const routes = [
   },
   { path: '/search', name: 'search', component: () => import('@/views/SearchView.vue') },
 
-  // ✅ 마이페이지는 /mypage로 통일
+  // 마이페이지 관련
   {
     path: '/mypage',
     name: 'mypage',
     component: () => import('@/views/MyPageView.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/mypage/grid/:type',
+    name: 'mypage-grid',
+    component: () => import('@/components/mypage/MyPageGridView.vue'),
+    props: true
+  },
+  { path: '/me', redirect: { name: 'mypage' } }, // 기존 호환성 유지
 
-  // ✅ 기존 /me 호환
-  { path: '/me', redirect: { name: 'mypage' } },
+  // 도움말 가이드
+  {
+    path: '/guide',
+    name: 'guide',
+    component: () => import('@/views/GuideView.vue'),
+  },
 
+  // 유저 및 인물 정보
   {
     path: '/users/:username',
     name: 'user-profile',
     component: () => import('@/views/UserProfileView.vue'),
     props: true,
   },
+  { 
+    path: '/people/:tmdbId', 
+    name: 'person-detail', 
+    component: () => import('@/views/PersonDetailView.vue'), 
+    props: true 
+  },
 
+  // 404 페이지 (항상 맨 아래에 위치)
   { path: '/:pathMatch(.*)*', name: 'notfound', component: () => import('@/views/NotFoundView.vue') },
-  { path: '/people/:tmdbId', name: 'person-detail', component: () => import('@/views/PersonDetailView.vue'), props: true },
-// src/router/index.js (또는 routes.js) 파일 내 해당 부분 찾기
-
-{
-  path: '/mypage/grid/:type',
-  name: 'mypage-grid',
-  /**
-   * [수정 핵심] import 경로를 새 폴더 위치로 변경합니다.
-   * @는 보통 src 폴더를 가리킵니다.
-   */
-  component: () => import('@/components/mypage/MyPageGridView.vue'),
-  
-  // 만약 @를 사용하지 않는 환경이라면 상대 경로로 작성하세요:
-  // component: () => import('../components/mypage/MyPageGridView.vue'),
-  
-  props: true // URL 파라미터를 props로 전달하고 싶을 때 사용
-}
-
-
-
-
-
-
 ]
 
 export default routes

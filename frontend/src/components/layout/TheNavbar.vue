@@ -12,6 +12,7 @@
           <RouterLink :to="{ name: 'movies' }" class="link">영화</RouterLink>
           <RouterLink to="/taste" class="link">취향분석</RouterLink>
           <RouterLink to="/recommend" class="link">추천</RouterLink>
+          <RouterLink to="/guide" class="link">도움말</RouterLink>
         </nav>
       </div>
 
@@ -54,7 +55,6 @@
 
         <template v-else>
           <RouterLink to="/login" class="btn ghost">로그인</RouterLink>
-          <RouterLink to="/signup" class="btn">회원가입</RouterLink>
         </template>
       </div>
     </div>
@@ -266,4 +266,56 @@ function changeTheme(themeName) {
 .brand-text { font-weight: 800; font-size: 18px; }
 .menu { display: flex; gap: 16px; }
 .right { display: flex; align-items: center; gap: 10px; }
+
+/* 알림창 컨테이너 */
+.toast-container {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 개별 토스트 메시지 */
+.toast-item {
+  min-width: 280px;
+  padding: 14px 20px;
+  background: var(--card);        /* 테마 카드 배경 */
+  color: var(--text);            /* 테마 글자색 */
+  border-left: 4px solid var(--primary); /* 테마별 포인트 컬러로 강조 */
+  border-radius: 8px;
+  box-shadow: var(--shadow);      /* 테마별 그림자 깊이 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: slideUp 0.3s ease-out; /* 등장 애니메이션 */
+}
+
+/* 성공/에러 등 상태별 변화 (필요 시) */
+.toast-item.error {
+  border-left-color: #ff4d4f; /* 에러는 공통 레드 사용 가능 */
+}
+
+.toast-message {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 18px;
+  margin-left: 10px;
+}
+
+/* 애니메이션 설정 */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 </style>

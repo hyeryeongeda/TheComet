@@ -150,6 +150,9 @@ import os
 GMS_MODEL = os.getenv("GMS_MODEL", "gpt-4o-mini")  # 없으면 기본값
 GMS_KEY = os.getenv("GMS_KEY")
 
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "no-reply@thecomet.local"
+FRONTEND_BASE_URL = "http://localhost:5173"  # 프론트 주소
 
 
 

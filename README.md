@@ -144,7 +144,7 @@
 ## 7. Component Structure
 Vue.js 컴포넌트 구조도 (재사용성 강조)
 
-<img src="./README_img/components_diagram.jpg" width="900" />
+<img src="./README_img/components_diagram.png" width="900" />
 
 ---
 

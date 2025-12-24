@@ -7,7 +7,7 @@
           <span class="brand-text">혜성</span>
         </RouterLink>
 
-        <!-- ✅ 데스크탑 메뉴 -->
+        <!--  데스크탑 메뉴 -->
         <nav v-if="!isMobile" class="menu">
           <RouterLink to="/" class="link">홈</RouterLink>
           <RouterLink :to="{ name: 'movies' }" class="link">영화</RouterLink>
@@ -18,7 +18,7 @@
       </div>
 
       <div class="right">
-        <!-- ✅ 데스크탑 검색 -->
+        <!--  데스크탑 검색 -->
         <input
           v-if="!isMobile"
           class="search"
@@ -28,7 +28,7 @@
           @keyup.enter="goSearch"
         />
 
-        <!-- ✅ 모바일 햄버거 버튼 -->
+        <!--  모바일 햄버거 버튼 -->
         <button
           v-if="isMobile"
           class="icon-btn"
@@ -50,7 +50,7 @@
           </svg>
         </button>
 
-        <!-- ✅ 데스크탑 유저 메뉴 -->
+        <!--  데스크탑 유저 메뉴 -->
         <div v-if="!isMobile && isLoggedIn" class="user-menu-wrapper">
           <div class="user-icon-btn">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="user-icon">
@@ -79,14 +79,14 @@
           </div>
         </div>
 
-        <!-- ✅ 데스크탑 로그인 -->
+        <!--  데스크탑 로그인 -->
         <template v-if="!isMobile && !isLoggedIn">
           <RouterLink to="/login" class="btn ghost">로그인</RouterLink>
         </template>
       </div>
     </div>
 
-    <!-- ✅ 모바일 드로어(햄버거 메뉴) -->
+    <!--  모바일 드로어(햄버거 메뉴) -->
     <Teleport to="body">
       <div v-show="mobileOpen" class="drawer-overlay" @click="closeMobile" />
 
@@ -164,7 +164,7 @@ const q = ref('')
 const isDetailPage = computed(() => route.name === 'movie-detail')
 const isLoggedIn = computed(() => auth.isLoggedIn || auth.isAuthenticated)
 
-/** ✅ 반응형 기준(원하면 숫자만 바꾸면 됨) */
+/**  반응형 기준(원하면 숫자만 바꾸면 됨) */
 const MOBILE_BP = 860
 const isMobile = ref(false)
 const mobileOpen = ref(false)
@@ -389,7 +389,7 @@ function changeThemeAndClose(themeName) {
   background: transparent; border: 1px solid transparent; color: var(--nav-text);
 }
 
-/* ✅ 모바일 햄버거/닫기 버튼 */
+/*  모바일 햄버거/닫기 버튼 */
 .icon-btn {
   background: transparent;
   border: none;
@@ -405,7 +405,7 @@ function changeThemeAndClose(themeName) {
 .hamburger-icon { width: 26px; height: 26px; }
 .close-icon { width: 22px; height: 22px; }
 
-/* ✅ 모바일 드로어 */
+/*  모바일 드로어 */
 .drawer-overlay {
   position: fixed;
   inset: 0;

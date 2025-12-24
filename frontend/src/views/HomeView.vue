@@ -155,7 +155,7 @@ function setupBanners() {
       link: `/movies/${review.movie?.tmdb_id}`,
       label: '베스트 코멘트',
       title: review.content.length > 25 ? review.content.substring(0, 25) + '...' : review.content,
-      desc: `${review.user?.nickname || '익명'}님의 솔직한 리뷰`
+      desc: `${review.user?.username || '사용자'}님의 솔직한 리뷰`
     })
   }
 
@@ -289,101 +289,296 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 공통 */
-.page { max-width: 1100px; margin: 0 auto; padding: 20px 14px 60px; color: var(--text); }
-.hero { padding: 26px 0 18px; }
-.hero-title { margin: 0; font-size: 44px; font-weight: 900; letter-spacing: -0.02em; }
-.hero-sub { margin: 10px 0 0; color: #666; font-weight: 700; }
-.divider { border: none; border-top: 1px solid #eee; margin: 18px 0 22px; }
-.sec { margin-top: 18px; }
-.sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.sec-title { margin: 0; font-size: 18px; font-weight: 900; }
-.more { border: none; background: transparent; cursor: pointer; color: #666; font-weight: 900; }
-.more:hover { text-decoration: underline; color: var(--primary); }
+/* =========================================
+   1. 공통 레이아웃 및 텍스트
+   ========================================= */
+.page { 
+  max-width: 1100px; 
+  margin: 0 auto; 
+  padding: 20px 14px 60px; 
+  color: var(--text); 
+}
+.hero { padding: 30px 0 20px; }
+.hero-title { 
+  margin: 0; 
+  font-size: 48px; 
+  font-weight: 900; 
+  letter-spacing: -0.03em; 
+  color: var(--text);
+  line-height: 1.1;
+}
+.hero-sub { 
+  margin: 12px 0 0; 
+  color: var(--muted, #888); 
+  font-size: 18px;
+  font-weight: 700; 
+}
 
-/* 배너 스타일 */
-.banner-section { margin-top: 10px; margin-bottom: 30px; }
+.divider { 
+  border: none; 
+  border-top: 1px solid var(--border, #eee); 
+  margin: 20px 0 25px; 
+}
+.sec { margin-top: 24px; }
+.sec-head { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  margin-bottom: 12px; 
+}
+.sec-title { 
+  margin: 0; 
+  font-size: 20px; 
+  font-weight: 900; 
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.more { 
+  border: none; 
+  background: transparent; 
+  cursor: pointer; 
+  color: var(--muted, #888); 
+  font-weight: 800; 
+  font-size: 14px;
+  transition: 0.2s;
+}
+.more:hover { 
+  color: var(--primary, #ff2f6e); 
+  text-decoration: none; /* 깔끔하게 색상만 변경 */
+}
+
+/* =========================================
+   2. 배너 섹션 (21:9 시네마틱)
+   ========================================= */
+.banner-section { margin-top: 10px; margin-bottom: 40px; }
 .banner-container { 
   position: relative; 
   width: 100%; 
   aspect-ratio: 21 / 9; 
-  border-radius: 12px; 
+  border-radius: 16px; 
   overflow: hidden; 
   background: #000;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
-.banner-slide { width: 100%; height: 100%; cursor: pointer; position: relative; }
-.banner-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
-.banner-slide:hover .banner-img { transform: scale(1.02); }
+.banner-slide::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* 하단으로 갈수록 어두워지는 그라데이션 (넷플릭스 스타일) */
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 20%,   /* 상단은 투명 */
+    rgba(0, 0, 0, 0.4) 60%, /* 중간부터 조금씩 어두워짐 */
+    rgba(0, 0, 0, 0.8) 100% /* 하단 글자 영역은 확실히 어둡게 */
+  );
+  z-index: 1;
+}
+.banner-img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+  opacity: 0.85; /* 텍스트 가독성을 위해 살짝 어둡게 */
+}
+.banner-slide:hover .banner-img { transform: scale(1.03); opacity: 1; }
 
 /* 배너 텍스트 오버레이 */
 .banner-overlay {
   position: absolute;
-  left: 40px; bottom: 40px;
-  color: white;
-  z-index: 2;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.7);
-  max-width: 70%;
+  left: 50px;
+  bottom: 45px;
+  color: #ffffff; /* 텍스트는 항상 흰색 유지 */
+  z-index: 2;     /* 그라데이션(1)보다 위로 */
+  max-width: 75%;
   pointer-events: none;
 }
 .banner-label {
   display: inline-block;
   background: var(--primary, #ff2f6e);
   color: #fff;
-  padding: 4px 10px;
-  border-radius: 4px;
+  padding: 5px 12px;
+  border-radius: 6px;
   font-size: 13px;
   font-weight: 800;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
+  text-shadow: none;
 }
-.banner-title { font-size: 32px; font-weight: 900; margin: 0; line-height: 1.2; word-break: keep-all; }
-.banner-desc { font-size: 16px; margin: 8px 0 0; opacity: 0.9; }
+/* 글자에 텍스트 그림자를 더 강하게 주어 가독성 끝판왕 만들기 */
+.banner-title {
+  font-size: 36px;
+  font-weight: 900;
+  margin: 0;
+  line-height: 1.2;
+  word-break: keep-all;
+  color: rgba(255, 255, 255, 0.9); 
+  /* 다중 그림자로 글자 테두리를 살짝 잡아줍니다 */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 0, 0, 0.3);
+}
+.banner-desc {
+  font-size: 18px;
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.9); /* 약간 투명한 흰색 */
+  font-weight: 500;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
 
+/* 배너 네비게이션 */
+/* 공통 스타일 (기존 유지) */
 .banner-nav-btn {
-  position: absolute; top: 0; bottom: 0; width: 8%;
-  background: transparent; border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  color: rgba(255, 255, 255, 0.4); transition: color 0.3s; z-index: 5;
+  position: absolute; 
+  top: 0; 
+  bottom: 0; 
+  width: 8%; /* 클릭 영역을 적절히 확보 */
+  background: transparent; 
+  border: none; 
+  cursor: pointer;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4); 
+  transition: all 0.3s; 
+  z-index: 5;
 }
-.banner-nav-btn:hover { color: #fff; }
-.banner-nav-btn.prev { left: 0; }
-.banner-nav-btn.next { right: 0; }
-.banner-nav-btn svg { width: 34px; height: 34px; }
 
+/*왼쪽 버튼 위치 */
+.banner-nav-btn.prev {
+  left: 0;
+  /* 살짝 왼쪽으로 그라데이션을 주면 더 고급스러워요 */
+  background: linear-gradient(to right, rgba(0,0,0,0.2), transparent);
+}
+
+/*  오른쪽 버튼 위치 */
+.banner-nav-btn.next {
+  right: 0;
+  /* 살짝 오른쪽으로 그라데이션 */
+  background: linear-gradient(to left, rgba(0,0,0,0.2), transparent);
+}
+
+/* 호버 시 스타일 */
+.banner-nav-btn:hover { 
+  color: #fff; 
+  background: rgba(0, 0, 0, 0.3); /* 호버 시 배경을 조금 더 어둡게 해서 버튼 강조 */
+}
+
+.banner-nav-btn svg { 
+  width: 44px; 
+  height: 44px; 
+  filter: drop-shadow(0 0 8px rgba(0,0,0,0.8)); 
+}
 .dots-container {
-  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 8px; z-index: 10;
+  position: absolute;
+  /* 텍스트(bottom: 45px)보다 약간 아래 혹은 비슷한 높이에 배치 */
+  bottom: 10px; 
+  left: 50%; 
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+  
+  /* [선택 사항] 점들이 배경에 묻힐까봐 걱정된다면 살짝 배경색을 줄 수도 있습니다. */
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px 12px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px); /* 뒤쪽 이미지를 살짝 흐리게 해서 점들을 더 돋보이게 */
 }
 .dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: rgba(255, 255, 255, 0.4); cursor: pointer; transition: all 0.2s;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3); cursor: pointer; transition: 0.3s;
 }
-.dot.active { background: #fff; transform: scale(1.2); }
+.dot.active { 
+  background: var(--primary, #ff2f6e); 
+  transform: scale(1.3); 
+  box-shadow: 0 0 10px rgba(255, 47, 110, 0.5);
+}
 
-/* 리뷰 슬라이더 */
+/* =========================================
+   3. 리뷰 슬라이더 (그리드 레이아웃)
+   ========================================= */
 .review-slider-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
 .review-scroll-container {
-  display: grid; grid-template-rows: repeat(2, 1fr); grid-auto-flow: column;
-  grid-auto-columns: calc(33.333% - 10.7px); gap: 16px;
-  overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory;
-  padding: 10px 0; scrollbar-width: none;
+  display: grid; 
+  grid-template-rows: repeat(2, 1fr); 
+  grid-auto-flow: column;
+  grid-auto-columns: calc(33.333% - 10.7px); 
+  gap: 16px;
+  overflow-x: auto; 
+  scroll-behavior: smooth; 
+  scroll-snap-type: x mandatory;
+  padding: 10px 0; 
+  scrollbar-width: none;
 }
 .review-scroll-container::-webkit-scrollbar { display: none; }
-.slider-item { width: 100%; scroll-snap-align: start; cursor: pointer; }
+.slider-item { 
+  width: 100%; 
+  scroll-snap-align: start; 
+  cursor: pointer; 
+  transition: transform 0.2s ease;
+}
+.slider-item:hover { transform: translateY(-5px); }
 
+/* 슬라이더 화살표 버튼 */
 .slider-nav-btn {
   position: absolute; top: 50%; transform: translateY(-50%);
-  width: 40px; height: 40px; border-radius: 50%;
-  background: #fff; border: 1px solid #eee; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center;
-  font-size: 20px; transition: all 0.2s;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--card, #fff); 
+  border: 1px solid var(--border, #eee); 
+  color: var(--text);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  cursor: pointer; z-index: 10; 
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; transition: all 0.2s ease;
 }
-.slider-nav-btn:hover { background: var(--primary, #ff2f6e); color: #fff; }
-.slider-nav-btn.left { left: -20px; }
-.slider-nav-btn.right { right: -20px; }
+.slider-nav-btn:hover { 
+  background: var(--primary, #ff2f6e); 
+  color: #fff; 
+  border-color: var(--primary);
+  transform: translateY(-50%) scale(1.1); 
+}
+.slider-nav-btn.left { left: -22px; }
+.slider-nav-btn.right { right: -22px; }
 
-@media (max-width: 768px) {
-  .banner-title { font-size: 24px; }
-  .banner-overlay { left: 20px; bottom: 20px; }
+/* =========================================
+   4. 반응형 대응
+   ========================================= */
+@media (max-width: 900px) {
+  .hero-title { font-size: 36px; }
+  .banner-title { font-size: 28px; }
   .review-scroll-container { grid-auto-columns: calc(50% - 8px); }
+}
+
+@media (max-width: 600px) {
+  .hero-title { font-size: 28px; }
+  .hero-sub { font-size: 15px; }
+
+  /* 배너 컨테이너 비율 조정 */
+  .banner-container { aspect-ratio: 16 / 9; }
+
+  /* 텍스트 위치를 요청하신 대로 45px로 상향 조정 */
+  .banner-overlay { 
+    left: 20px; 
+    bottom: 45px; /* 텍스트가 더 위로 올라감 */
+    max-width: 90%; 
+  }
+  .banner-title { font-size: 20px; }
+  .banner-desc { font-size: 14px; }
+
+  /* 텍스트와 겹치지 않게 점(dots)은 하단 구석이나 바닥에 배치 */
+  .dots-container {
+    right: 20px;      /* 오른쪽 구석 */
+    bottom: 15px;     /* 텍스트(45px)보다 아래에 위치하여 겹침 방지 */
+    left: auto;
+    transform: none;
+    padding: 4px 8px; /* 모바일용으로 더 작게 */
+  }
+
+  .banner-nav-btn { display: none; } /* 모바일 버튼 숨김 유지 */
+
+  .review-scroll-container { 
+    grid-template-rows: 1fr; 
+    grid-auto-columns: 85%; 
+  }
 }
 </style>

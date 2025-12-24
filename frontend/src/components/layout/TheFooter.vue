@@ -59,7 +59,7 @@ function scrollTop() {
 
 <style scoped>
 .footer {
-  margin-top: 80px; /* 본문과 푸터 사이 여백 */
+  margin-top: 0px; /* 본문과 푸터 사이 여백 */
   border-top: 1px solid var(--border);
   background: var(--card);
   transition: background-color 0.3s, color 0.3s;

@@ -1,12 +1,9 @@
 <template>
   <div class="info-area">
     <div class="rating-row">
-      <div class="rating-stars">
-        <div class="star-bg">★★★★★★★★★★</div>
-        <div class="star-fill" :style="{ width: starWidth }">★★★★★★★★★★</div>
-      </div>
+
       <div class="rating-score">
-        <span class="score-num">{{ voteScore }}</span>
+        <span class="score-num">{{ voteScore }} /10 </span>
         <span class="score-label">평균 별점 ({{ voteCount }}명)</span>
       </div>
     </div>

@@ -1,8 +1,7 @@
 <template>
   <section class="row">
     <div class="row-head">
-      <h2 class="row-title">{{ title }}</h2>
-
+      <h3 class="sub-title">추천 영화</h3>
       <div class="actions">
         <button class="nav-btn" @click="scrollLeft">‹</button>
         <button class="nav-btn" @click="scrollRight">›</button>

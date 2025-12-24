@@ -23,54 +23,43 @@
     </aside>
 
     <div class="main-panel">
-      <section class="input-section">
-        <div class="input-container">
-          <textarea 
-            v-model="chatInput" 
-            placeholder="오늘 어떤 영화를 보고 싶으세요?&#10;(예 : 비도 오고 꿀꿀한데 위로가 되는 따뜻한 영화 추천해줘)"
-            @keypress.enter.prevent="sendChat"
-            :disabled="chatLoading"
-          ></textarea>
-          <button class="send-btn" @click="sendChat" :disabled="chatLoading || !chatInput.trim()">
-            보내기
-          </button>
-        </div>
-
-        <div class="quick-tags">
-          <button v-for="tag in ['비 오는 날 감성', '코믹', '설레는 로맨스']" :key="tag" @click="chatInput = tag" class="tag-btn">
-            {{ tag }}
-          </button>
-        </div>
-      </section>
-
-      <div class="chat-display" ref="chatWindow">
-        <div v-for="(m, idx) in currentChat.messages" :key="idx" :class="['msg-row', m.role]">
-          <div v-if="m.role === 'assistant'" class="bot-icon">🤖</div>
-          <div class="bubble">{{ m.content }}</div>
-        </div>
-
-        <div v-if="chatLoading" class="msg-row assistant">
-          <div class="bot-icon">🤖</div>
-          <div class="bubble loading">영화 데이터를 분석하고 있습니다...</div>
-        </div>
-
-        <div v-if="currentChat.movies && currentChat.movies.length > 0" class="movie-results">
-          <div v-for="movie in currentChat.movies.slice(0, 3)" :key="movie.tmdb_id" class="horizontal-card" @click="goMovie(movie.tmdb_id)">
-            <div class="poster-box">
-              <img :src="posterUrl(movie.poster_path)" alt="poster">
-            </div>
-            <div class="info-box">
-              <div class="info-top">
-                <h4 class="m-title">{{ movie.title }}</h4>
-                <div class="stars">⭐ {{ Number(movie.vote_average).toFixed(1) }}</div>
-              </div>
-              <div class="ai-reason-box">
-                <div class="check-icon">✓</div>
-                <p class="reason-text">{{ movie.ai_reason || '당신의 취향에 맞는 추천 영화입니다.' }}</p>
-              </div>
-            </div>
+      <div class="chat-layout-wrapper">
+        
+        <div class="chat-display" ref="chatWindow">
+          <div v-for="(m, idx) in currentChat.messages" :key="idx" :class="['msg-row', m.role]">
+            <div v-if="m.role === 'assistant'" class="bot-icon">🤖</div>
+            <div class="bubble">{{ m.content }}</div>
           </div>
+
+          <div v-if="chatLoading" class="msg-row assistant">
+            <div class="bot-icon">🤖</div>
+            <div class="bubble loading">분석 중...</div>
+          </div>
+
+          <div v-if="currentChat.movies?.length" class="movie-results">
+            </div>
         </div>
+
+        <section class="input-section">
+          <div class="input-container">
+            <textarea 
+              v-model="chatInput" 
+              placeholder="어떤 영화를 추천해드릴까요?"
+              @keypress.enter.prevent="sendChat"
+              :disabled="chatLoading"
+            ></textarea>
+            <button class="send-btn" @click="sendChat" :disabled="chatLoading || !chatInput.trim()">
+              보내기
+            </button>
+          </div>
+
+          <div class="quick-tags">
+            <button v-for="tag in ['비 오는 날 감성', '코믹', '설레는 로맨스']" :key="tag" @click="chatInput = tag" class="tag-btn">
+              {{ tag }}
+            </button>
+          </div>
+        </section>
+
       </div>
     </div>
   </div>
@@ -209,7 +198,7 @@ watch(allChats, (newVal) => {
 
 <style scoped>
 
-.ai-recommend-layout { display: flex; gap: 20px; max-width: 1100px; margin: 0 auto; height: 750px; }
+.ai-recommend-layout { display: flex; gap: 20px; max-width: 1100px; margin: 0 auto; height: 650px; }
 
 /* 왼쪽 사이드바 */
 .chat-sidebar { width: 220px; border: 1px solid var(--border); border-radius: 16px; padding: 15px; display: flex; flex-direction: column; background: var(--card); }
@@ -217,7 +206,7 @@ watch(allChats, (newVal) => {
 .sidebar-title { font-size: 16px; font-weight: 900; margin-bottom: 12px; color: var(--text); }
 .new-chat-btn { width: 100%; padding: 10px; background: var(--primary); color: #fff; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
 .new-chat-btn:hover { opacity: 0.8; }
-
+.chat-layout-wrapper {  display: flex;  flex-direction: column;  height: 100%;  gap: 20px;}
 .chat-history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .history-item { padding: 10px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--bg); }
 .history-item.active { border-color: var(--primary); background: var(--primary-weak); font-weight: bold; }
@@ -225,16 +214,14 @@ watch(allChats, (newVal) => {
 .delete-chat { border: none; background: none; color: var(--muted); cursor: pointer; font-size: 16px; }
 
 /* 메인 채팅 판넬 */
-.main-panel { flex: 1; display: flex; flex-direction: column; gap: 20px; }
-
-.input-section { background: var(--card); border: 2px solid var(--primary); border-radius: 16px; padding: 18px; }
-.input-container { display: flex; gap: 12px; }
+.main-panel { height: 100%; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+.input-section {  background: var(--card);  border: 1px solid var(--border);  border-radius: 20px;  padding: 15px 20px;  box-shadow: var(--shadow); }
+.input-container {  display: flex;  gap: 10px;  background: var(--bg);  padding: 8px 12px;  border-radius: 12px;  border: 1px solid var(--border);}
 textarea { flex: 1; border: none; outline: none; resize: none; height: 60px; font-size: 14px; font-weight: 600; line-height: 1.5; background: transparent; color: var(--text); }
 .send-btn { background: var(--primary); color: #fff; border: none; padding: 0 18px; border-radius: 10px; cursor: pointer; font-weight: 800; }
 .send-btn:disabled { opacity: 0.3; }
-
 .quick-tags { display: flex; gap: 8px; margin-top: 12px; }
-.tag-btn { padding: 6px 12px; border-radius: 15px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 12px; font-weight: 800; cursor: pointer; }
+.tag-btn { padding: 6px 12px; border-radius: 15px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 12px; font-weight: 800; cursor: pointer; min-height: 0; }
 
 /* 채팅 출력 영역 */
 .chat-display { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }

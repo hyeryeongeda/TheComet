@@ -19,7 +19,6 @@
             <MovieActionRow 
               :isLiked="isLiked" 
               :isWished="isWished"
-              :starWidth="starWidth"
               :voteScore="voteScore"
               :voteCount="movie.vote_count"
               @toggle-like="onToggleLike"
@@ -59,7 +58,6 @@
         <div class="section-divider"></div>
 
         <section class="sub-section">
-          <h3 class="sub-title">비슷한 작품</h3>
           <MovieRow v-if="similarList.length > 0" title="" :movies="similarList" />
           <div v-else class="no-data">관련 영화 정보를 불러오는 중입니다...</div>
         </section>

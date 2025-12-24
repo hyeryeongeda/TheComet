@@ -10,7 +10,7 @@
 
     <div v-if="tab === 'vault'" class="content">
       <MyPageSection 
-        title="코멘트 영화 (작성한)" 
+        title="코멘트 작성한 영화" 
         :moreLink="{ name: 'mypage-grid', params: { type: 'commented' }}"
         :isEmpty="commentedList.length === 0"
         emptyMsg="작성한 코멘트가 없습니다."
@@ -19,10 +19,10 @@
       </MyPageSection>
 
       <MyPageSection 
-        title="좋아요 한 영화" 
+        title="♥ 한 영화" 
         :moreLink="{ name: 'mypage-grid', params: { type: 'movie_likes' }}"
         :isEmpty="movieLikesList.length === 0"
-        emptyMsg="좋아요 한 영화가 없습니다."
+        emptyMsg="♥ 한 영화가 없습니다."
       >
         <MovieCard v-for="item in movieLikesList.slice(0, 5)" :key="item.id" :movie="item" />
       </MyPageSection>
@@ -39,10 +39,10 @@
 
     <div v-else class="content">
       <MyPageSection 
-        title="인물 (자신이 좋아요를 누른)" 
+        title="♥ 한 인물" 
         :moreLink="{ name: 'mypage-grid', params: { type: 'liked_people' }}"
         :isEmpty="likedPeople.length === 0"
-        emptyMsg="좋아요한 인물이 없습니다."
+        emptyMsg="♥ 한 인물이 없습니다."
       >
         <PersonCard 
           v-for="p in likedPeople.slice(0, 5)" 
@@ -53,10 +53,10 @@
       </MyPageSection>
 
       <MyPageSection 
-        title="코멘트 (자신이 좋아요를 누른)" 
+        title="♥ 한 코멘트" 
         :moreLink="{ name: 'mypage-grid', params: { type: 'liked_reviews' }}"
         :isEmpty="likedReviews.length === 0"
-        emptyMsg="좋아요한 코멘트가 없습니다."
+        emptyMsg="♥ 한 코멘트가 없습니다."
       >
         <ReviewCard 
           v-for="r in likedReviews.slice(0, 5)" 
@@ -88,7 +88,6 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-// ✅ [추가] fetchFollowList 임포트
 import { fetchMyActivity, fetchMyLikes, togglePersonLike, fetchMyLikedPeople, fetchFollowList } from '@/api/comet' 
 
 import MyPageProfileCard from '@/components/mypage/MyPageProfileCard.vue'
@@ -99,7 +98,6 @@ import PersonCard from '@/components/movie/PersonCard.vue'
 import ReviewCard from '@/components/review/ReviewCard.vue'
 import ProfileEditModal from '@/components/user/ProfileEditModal.vue' 
 import ReviewDetailModal from '@/components/review/ReviewDetailModal.vue'
-// ✅ [추가] 유저 리스트 모달 임포트
 import UserListModal from '@/components/mypage/UserListModal.vue'
 
 const auth = useAuthStore()

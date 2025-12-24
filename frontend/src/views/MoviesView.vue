@@ -1,11 +1,7 @@
 <template>
   <div class="page">
     <header class="head">
-      <h1 class="title">영화</h1>
-      <p class="sub">장르/정렬로 영화 탐색</p>
     </header>
-
-    <!-- 필터 바 -->
     <section class="filters">
       <div class="filter-row">
         <div class="label">장르 선택</div>
@@ -29,9 +25,15 @@
           </button>
         </div>
       </div>
+    </section>
 
-      <div class="filter-row">
-        <div class="label">정렬</div>
+    <!-- 결과 -->
+    <section class="result">
+      <div class="result-top">
+        <div class="count">
+          <strong>{{ total.toLocaleString() }}</strong>개 결과
+        </div>
+        <div class="filter-row">
         <select class="select" v-model="sort" @change="applyQuery({ sort, page: 1 })">
           <option value="popular">인기순</option>
           <option value="latest">최신순</option>
@@ -45,14 +47,7 @@
           <button class="clear" @click="applyQuery({ q: null, page: 1 })">검색 해제</button>
         </div>
       </div>
-    </section>
 
-    <!-- 결과 -->
-    <section class="result">
-      <div class="result-top">
-        <div class="count">
-          <strong>{{ total.toLocaleString() }}</strong>개 결과
-        </div>
       </div>
 
       <p v-if="loading" class="muted">불러오는 중...</p>

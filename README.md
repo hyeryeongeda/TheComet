@@ -130,6 +130,9 @@
 
 ---
 
+
+
+
 ### 5.1 인증/권한 처리
 - 토큰 저장 및 로그인 상태 유지 (Pinia Store)
 - API 요청 시 인증 헤더 자동 적용 (Axios Interceptor)
@@ -140,50 +143,153 @@
   <summary>핵심 코드 보기 (Pinia: 로그인 상태 복구 & 토큰 저장)</summary>
 
 ```js
-// src/stores/auth.js (핵심 부분 발췌)
+  // src/stores/auth.js (핵심 부분 발췌)
 
-// ✅ 앱 최초 진입 / 새로고침 시 로그인 상태 복구
-async bootstrap() {
-  const access = localStorage.getItem('access') // 로컬 토큰 확인
-  if (!access) {
-    this.user = null // 토큰 없으면 비로그인 처리
-    return
-  }
+  // ✅ 앱 최초 진입 / 새로고침 시 로그인 상태 복구
+  async bootstrap() {
+    const access = localStorage.getItem('access') // 로컬 토큰 확인
+    if (!access) {
+      this.user = null // 토큰 없으면 비로그인 처리
+      return
+    }
 
-  try {
-    const me = await fetchMe() // ✅ 토큰으로 내 정보 조회
-    this.user = me // ✅ 로그인 상태 복구
-  } catch (e) {
-    // ✅ 토큰이 만료/오류이면 깨끗하게 정리
-    localStorage.removeItem('access')
-    localStorage.removeItem('refresh')
-    this.user = null
-  }
-},
+    try {
+      const me = await fetchMe() // ✅ 토큰으로 내 정보 조회
+      this.user = me // ✅ 로그인 상태 복구
+    } catch (e) {
+      // ✅ 토큰이 만료/오류이면 깨끗하게 정리
+      localStorage.removeItem('access')
+      localStorage.removeItem('refresh')
+      this.user = null
+    }
+  },
 
-// ✅ 로그인 성공 시 토큰 저장 + user 상태 세팅
-async login(payload) {
-  this.loading = true
-  try {
-    const res = await apiLogin(payload) // 백엔드 로그인 API 호출
-    const { user, tokens } = res // { user, tokens:{access, refresh} }
+  // ✅ 로그인 성공 시 토큰 저장 + user 상태 세팅
+  async login(payload) {
+    this.loading = true
+    try {
+      const res = await apiLogin(payload) // 백엔드 로그인 API 호출
+      const { user, tokens } = res // { user, tokens:{access, refresh} }
 
-    if (tokens?.access) localStorage.setItem('access', tokens.access) // ✅ access 저장
-    if (tokens?.refresh) localStorage.setItem('refresh', tokens.refresh) // ✅ refresh 저장
+      if (tokens?.access) localStorage.setItem('access', tokens.access) // ✅ access 저장
+      if (tokens?.refresh) localStorage.setItem('refresh', tokens.refresh) // ✅ refresh 저장
 
-    this.user = user // ✅ 화면에서 즉시 로그인 상태 반영
-    return res
-  } finally {
-    this.loading = false
-  }
-},
+      this.user = user // ✅ 화면에서 즉시 로그인 상태 반영
+      return res
+    } finally {
+      this.loading = false
+    }
+  },
+```
 </details>
 
-### 5.2 영화 데이터 수집/가공 (TMDB)
-- 공통 fetch 유틸로 엔드포인트별 중복 제거
-- 목록/상세/검색/큐레이션 로직 분리
+<details>
+  <summary>핵심 코드 보기 (Axios: 인증 헤더 주입 + 401 Refresh 재발급 + 요청 큐)</summary>
 
-> 관련 파일: `src/api/tmdb.js`, `src/stores/movie.js`
+```js
+// src/api/axios.js (핵심 부분 발췌)
+
+import axios from 'axios'
+
+const RAW_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
+const BASE = RAW_BASE.replace(/\/$/, '')
+
+const api = axios.create({
+  baseURL: BASE,
+  withCredentials: false,
+})
+
+// ✅ 1) 모든 요청에 access 토큰 자동 첨부
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access')
+  if (token) config.headers.Authorization = `Bearer ${token}` // 헤더 자동 주입
+  return config
+})
+
+let isRefreshing = false
+let queue = []
+
+// ✅ 2) access 만료(401) → refresh로 재발급 후 원 요청 재시도 + 대기 요청 큐 처리
+api.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const original = error.config
+    if (!original) return Promise.reject(error)
+
+    if (error.response?.status === 401 && !original._retry) {
+      original._retry = true // 무한 재시도 방지
+
+      const refresh = localStorage.getItem('refresh')
+      if (!refresh) return Promise.reject(error)
+
+      // 이미 refresh 중이면 큐에 쌓아두고, 끝나면 새 토큰으로 재시도
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          queue.push({
+            resolve: (token) => {
+              original.headers.Authorization = `Bearer ${token}`
+              resolve(api(original))
+            },
+            reject,
+          })
+        })
+      }
+
+      isRefreshing = true
+      try {
+        const r = await axios.post(`${BASE}/auth/refresh/`, { refresh })
+        const newAccess = r.data.access
+        localStorage.setItem('access', newAccess)
+
+        // 큐에 대기 중이던 요청들 처리
+        queue.forEach(({ resolve }) => resolve(newAccess))
+        queue = []
+
+        // 실패했던 원 요청 재시도
+        original.headers.Authorization = `Bearer ${newAccess}`
+        return api(original)
+      } catch (e) {
+        // refresh 실패 → 토큰 정리 후 로그인 다시 유도
+        localStorage.removeItem('access')
+        localStorage.removeItem('refresh')
+        queue.forEach(({ reject }) => reject(e))
+        queue = []
+        return Promise.reject(e)
+      } finally {
+        isRefreshing = false
+      }
+    }
+
+    return Promise.reject(error)
+  }
+)
+
+export default api
+```
+
+</details>
+
+
+
+
+### 5.2 영화 데이터 수집/가공 (TMDB 동기화 Management Command)
+- 서비스에서 사용하는 영화/인물/크레딧 데이터를 **TMDB → DB로 사전 동기화**하여, 화면 로딩 시 외부 API 의존도를 낮추고 일관된 추천/검색 경험을 제공합니다.
+- 초기/갱신 시 동기화가 선행되어야 하며, 동기화가 되지 않으면 일부 기능에서 데이터 누락(동기화 오류)이 발생할 수 있습니다.
+
+> 관련 기능: TMDB 데이터 적재(Seed) / 홈 섹션 큐레이션 갱신  
+> 실행 위치: `backend/` (Django)
+
+#### 실행 방법 (초기 세팅/데이터 갱신)
+```bash
+# (1) TMDB 전체 데이터 벌크 동기화 (페이지 단위)
+python manage.py sync_tmdb_bulk --pages 25 --with-credits --sleep 0.35
+
+# (2) 홈 화면 구성용 데이터 동기화 (빠르게 갱신)
+python manage.py sync_tmdb_home --pages 5 --no-credits
+```
+
+
+
 
 ### 5.3 코멘트/좋아요/보고싶어요 도메인 로직
 - 동일 컴포넌트에서 상태 변화(추가/삭제/수정) 즉시 반영

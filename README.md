@@ -297,12 +297,172 @@ python manage.py sync_tmdb_home --pages 5 --no-credits
 
 > 관련 파일: `src/stores/review.js`, `src/components/review/*`
 
+<details>
+  <summary>핵심 코드 보기 (MovieDetail: 보고싶어요/리뷰작성/리뷰좋아요/댓글 즉시 반영)</summary>
+
+```js
+// src/views/MovieDetailView.vue (핵심 발췌)
+
+// ✅ 보고싶어요 토글: 상태 변경 → loadAll()로 상세 화면 데이터 재동기화
+async function onToggleWish() {
+  if (!authStore.isLoggedIn) return alert('로그인 필요')
+  try {
+    const res = await toggleMovieWish(Number(tmdbId.value))
+    isWished.value = res.wished
+
+    if (!res.wished) {
+      myReview.value = null // ✅ 보고싶어요 삭제 시 내 리뷰 상태도 정리
+    }
+
+    loadAll() // ✅ 상세 데이터(좋아요/보고싶어요/리뷰/댓글 등) 재조회로 즉시 반영
+  } catch (err) {
+    alert(err.response?.data?.detail || '오류가 발생했습니다.')
+  }
+}
+
+// ✅ 리뷰 작성/수정: 성공 시 모달 닫고 loadAll()로 리스트/상태 즉시 반영
+async function handleWriteSubmit(payload) {
+  try {
+    const body = { content: payload.content, rating: payload.rating, watched: true }
+
+    // ✅ 내 리뷰가 있으면 수정, 없으면 생성
+    if (myReview.value?.id) await updateReview(myReview.value.id, body)
+    else await createMovieReview(Number(tmdbId.value), body)
+
+    showWriteModal.value = false
+    await loadAll() // ✅ 작성 직후 코멘트 목록/내 리뷰/보고싶어요 상태까지 동기화
+  } catch {
+    alert('오류가 발생했습니다.')
+  }
+}
+
+// ✅ 리뷰 좋아요: "선택 리뷰 + 리스트" 둘 다 업데이트해서 모달/리스트 싱크 유지
+async function handleReviewLike(reviewId) {
+  try {
+    const res = await toggleReviewLike(reviewId)
+
+    // 1) 모달에서 보고 있는 선택 리뷰 업데이트
+    if (selectedReview.value?.id === reviewId) {
+      selectedReview.value.is_liked = res.liked
+      selectedReview.value.like_count = res.like_count
+    }
+
+    // 2) 화면의 리뷰 리스트도 동시에 업데이트
+    reviews.value = reviews.value.map((r) =>
+      r.id === reviewId ? { ...r, is_liked: res.liked, like_count: res.like_count } : r
+    )
+  } catch (e) {
+    console.error('리뷰 좋아요 실패:', e)
+  }
+}
+
+// ✅ 댓글 작성: 서버 반영 후 selectedReview의 댓글 수/목록을 즉시 업데이트
+async function handleReplySubmit(content) {
+  try {
+    const newC = await createReviewComment(selectedReview.value.id, { content })
+    reviewComments.value.unshift(newC) // ✅ UI 즉시 반영
+    selectedReview.value.comment_count++
+  } catch {
+    alert('댓글 등록 실패')
+  }
+}
+```
+</details>
+
+
+<details>
+  <summary>핵심 코드 보기 (ReviewDetailModal: 이벤트 emit으로 “상위에서 상태 일괄 관리”)</summary>
+
+```js
+// src/components/review/ReviewDetailModal.vue (핵심 발췌)
+
+const emit = defineEmits(['close', 'edit', 'delete', 'like', 'reply-submit', 'reply-delete'])
+
+// ✅ 좋아요 클릭 → 상위(MovieDetail)로 이벤트만 전달 (상위가 상태/리스트를 함께 갱신)
+function toggleLike() {
+  emit('like', localReview.value.id)
+}
+
+// ✅ 댓글 등록 → 상위가 API 호출/상태 업데이트 담당
+async function submitReply() {
+  const content = replyContent.value.trim()
+  if (!content) return
+  emit('reply-submit', content)
+  replyContent.value = ''
+}
+
+// ✅ 댓글 삭제도 상위에 위임 (상위에서 comment_count까지 같이 정리)
+function deleteReply(id) {
+  emit('reply-delete', id)
+}
+
+```
+</details>
+
+
+
 ### 5.4 AI 추천(프롬프트 제어)
 - SYSTEM_PROMPT로 출력 포맷 제한 및 추천 근거 제공
 - 사용자 입력을 필터링/정규화하여 일관된 결과 유도
 
 > 관련 파일: `src/components/recommend/*`
 ---
+
+<details>
+  <summary>핵심 코드 보기 (RecommendAi: 대화 히스토리 유지 + 추천근거 렌더링)</summary>
+
+```js
+// src/components/recommend/RecommendAi.vue (핵심 발췌)
+
+async function sendChat() {
+  if (!input.value.trim()) return
+
+  // ✅ 사용자 입력 즉시 UI에 표시
+  messages.value.push({ role: 'user', content: input.value })
+
+  // ✅ 직전 N개 히스토리를 서버로 전달해 문맥 유지
+  const history = messages.value.slice(-10).map((m) => ({
+    role: m.role,
+    content: m.content,
+  }))
+
+  const payload = {
+    user_input: input.value,
+    history,
+  }
+
+  input.value = ''
+  loading.value = true
+
+  try {
+    const res = await postTasteChat(payload)
+
+    // ✅ 서버 응답(추천 텍스트) 표시
+    messages.value.push({
+      role: 'assistant',
+      content: res?.answer || '추천 결과를 불러오지 못했습니다.',
+    })
+
+    // ✅ 추천 근거(why)도 함께 내려오면 UI에 표시 가능하게 저장
+    if (Array.isArray(res?.recommended_reasons)) {
+      lastReasons.value = res.recommended_reasons
+    }
+
+    // ✅ 유저별 채팅 저장(새로고침해도 유지)
+    saveMessages()
+  } finally {
+    loading.value = false
+  }
+}
+
+function saveMessages() {
+  const key = `comet_chat_${authStore.user?.username || 'guest'}`
+  localStorage.setItem(key, JSON.stringify(messages.value))
+}
+
+
+```
+</details>
 
 
 
@@ -341,6 +501,21 @@ Vue.js 컴포넌트 구조도
 ---
 
 ## 8. 회고
-- 잘 된 점
-- 아쉬운 점
-- 다음 개선 계획
+- 김혜령
+
+
+
+
+
+---
+
+
+- 이규성
+
+실제 서비스 흐름(회원/리뷰/추천/마이페이지)을 끝까지 구현해보며, “기능이 연결되는 경험”을 제대로 해볼 수 있어 의미 있었다.
+프론트 UI/UX 시안을 기반으로 화면 구조를 설계하고 구현하면서 컴포넌트 분리, 재사용 구조에 대한 감각이 생겼다.
+
+이번 프로젝트를 하면서 프론트(화면/UX)를 먼저 그려두고 → 그 흐름에 맞춰 백엔드를 설계하는 방식이 오히려 전체 구현이 더 수월하다고 느꼈다.
+LLM을 정말 많이 활용하며 개발했는데, “도구를 쓰는 것”과 “제대로 검증하며 쓰는 것”은 다르다는 걸 체감했다. 프롬프트 작성/검증/리팩토링 관점에서 더 공부가 필요하다고 느꼈다.
+
+다만 아쉬웠던 점은 협업 과정에서 작업 방향과 우선순위를 조금 더 자주 공유했으면 하는 점이다. 

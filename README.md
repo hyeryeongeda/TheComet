@@ -130,15 +130,54 @@
 
 ---
 
-
-
-## 5. 핵심 코드 (주요 코드)  [변경할수도 있습니댜 확정 코드 아님]
-
 ### 5.1 인증/권한 처리
 - 토큰 저장 및 로그인 상태 유지 (Pinia Store)
 - API 요청 시 인증 헤더 자동 적용 (Axios Interceptor)
 
 > 관련 파일: `src/stores/auth.js`, `src/api/axios.js`
+
+<details>
+  <summary>핵심 코드 보기 (Pinia: 로그인 상태 복구 & 토큰 저장)</summary>
+
+```js
+// src/stores/auth.js (핵심 부분 발췌)
+
+// ✅ 앱 최초 진입 / 새로고침 시 로그인 상태 복구
+async bootstrap() {
+  const access = localStorage.getItem('access') // 로컬 토큰 확인
+  if (!access) {
+    this.user = null // 토큰 없으면 비로그인 처리
+    return
+  }
+
+  try {
+    const me = await fetchMe() // ✅ 토큰으로 내 정보 조회
+    this.user = me // ✅ 로그인 상태 복구
+  } catch (e) {
+    // ✅ 토큰이 만료/오류이면 깨끗하게 정리
+    localStorage.removeItem('access')
+    localStorage.removeItem('refresh')
+    this.user = null
+  }
+},
+
+// ✅ 로그인 성공 시 토큰 저장 + user 상태 세팅
+async login(payload) {
+  this.loading = true
+  try {
+    const res = await apiLogin(payload) // 백엔드 로그인 API 호출
+    const { user, tokens } = res // { user, tokens:{access, refresh} }
+
+    if (tokens?.access) localStorage.setItem('access', tokens.access) // ✅ access 저장
+    if (tokens?.refresh) localStorage.setItem('refresh', tokens.refresh) // ✅ refresh 저장
+
+    this.user = user // ✅ 화면에서 즉시 로그인 상태 반영
+    return res
+  } finally {
+    this.loading = false
+  }
+},
+</details>
 
 ### 5.2 영화 데이터 수집/가공 (TMDB)
 - 공통 fetch 유틸로 엔드포인트별 중복 제거
@@ -156,7 +195,7 @@
 - SYSTEM_PROMPT로 출력 포맷 제한 및 추천 근거 제공
 - 사용자 입력을 필터링/정규화하여 일관된 결과 유도
 
-> 관련 파일: `src/components/recommend/*
+> 관련 파일: `src/components/recommend/*`
 ---
 
 
@@ -184,7 +223,14 @@ Vue.js 컴포넌트 구조도
 “View는 흐름(라우팅/상태), Component는 UI 재사용” 원칙으로 구조화
 카드/행(Row) 컴포넌트는 여러 화면에서 동일 UI를 공유
 모달/폼 컴포넌트는 기능 단위로 분리해 유지보수/확장성 강화
-<img src="./README_img/components_diagram.png" width="900" />
+
+<details>
+  <summary>컴포넌트 구조 보기</summary>
+  <br/>
+  <img src="./README_img/components_diagram.png" width="900" />
+</details>
+
+
 
 ---
 

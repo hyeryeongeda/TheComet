@@ -24,12 +24,11 @@
 - Data & AI: TMDB API, GMS_KEY, VITE_YOUTUBE_API_KEY  
 - Tools: Git, Figma, Notion  
 
-> (선택) 배지 넣고 싶으면 shields 배지 추가 가능
+
 
 ---
 
 ## 4. 핵심 기능 (GIF)
-> 각 기능은 GIF로 시연 화면을 첨부합니다.
 
 ### (1) 페이지 공통 기능
 <img src="./README_img/common.gif" width="900" />
@@ -131,19 +130,60 @@
 
 ---
 
-## 5. 핵심 코드 (주요 코드)
-> 핵심 기능 구현과 관련된 주요 코드/설계를 정리합니다. (추가 예정)
 
+
+## 5. 핵심 코드 (주요 코드)  [변경할수도 있습니댜 확정 코드 아님]
+
+### 5.1 인증/권한 처리
+- 토큰 저장 및 로그인 상태 유지 (Pinia Store)
+- API 요청 시 인증 헤더 자동 적용 (Axios Interceptor)
+
+> 관련 파일: `src/stores/auth.js`, `src/api/axios.js`
+
+### 5.2 영화 데이터 수집/가공 (TMDB)
+- 공통 fetch 유틸로 엔드포인트별 중복 제거
+- 목록/상세/검색/큐레이션 로직 분리
+
+> 관련 파일: `src/api/tmdb.js`, `src/stores/movie.js`
+
+### 5.3 코멘트/좋아요/보고싶어요 도메인 로직
+- 동일 컴포넌트에서 상태 변화(추가/삭제/수정) 즉시 반영
+- 마이페이지 보관함과 상세 페이지 연동
+
+> 관련 파일: `src/stores/review.js`, `src/components/review/*`
+
+### 5.4 AI 추천(프롬프트 제어)
+- SYSTEM_PROMPT로 출력 포맷 제한 및 추천 근거 제공
+- 사용자 입력을 필터링/정규화하여 일관된 결과 유도
+
+> 관련 파일: `src/components/recommend/*
 ---
 
+
+
+
 ## 6. ERD (Entity Relationship Diagram)
-> 추후 업데이트 예정
+핵심 도메인(User–Follow / Movie–Genre / Review–Comment / Like)을 중심으로 ERD를 구성했습니다. 
+- Review는 (user_id, movie_id) 기준으로 1인 1리뷰를 보장합니다.
+- Like/Follow는 중복을 방지하기 위해 유니크 제약을 적용했습니다.
+
+### 핵심 ERD
+<img src="./README_img/erd_core.png" width="900" />
+
+<details>
+  <summary>전체 ERD 보기</summary>
+  <br/>
+  <img src="./README_img/erd_full.png" width="900" />
+</details>
+
 
 ---
 
 ## 7. Component Structure
-Vue.js 컴포넌트 구조도 (재사용성 강조)
-
+Vue.js 컴포넌트 구조도
+“View는 흐름(라우팅/상태), Component는 UI 재사용” 원칙으로 구조화
+카드/행(Row) 컴포넌트는 여러 화면에서 동일 UI를 공유
+모달/폼 컴포넌트는 기능 단위로 분리해 유지보수/확장성 강화
 <img src="./README_img/components_diagram.png" width="900" />
 
 ---

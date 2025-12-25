@@ -406,7 +406,7 @@ function deleteReply(id) {
 - 사용자 입력을 필터링/정규화하여 일관된 결과 유도
 
 > 관련 파일: `src/components/recommend/*`
----
+
 
 <details>
   <summary>핵심 코드 보기 (RecommendAi: 대화 히스토리 유지 + 추천근거 렌더링)</summary>
@@ -464,8 +464,7 @@ function saveMessages() {
 ```
 </details>
 
-
-
+---
 
 ## 6. ERD (Entity Relationship Diagram)
 핵심 도메인(User–Follow / Movie–Genre / Review–Comment / Like)을 중심으로 ERD를 구성했습니다. 

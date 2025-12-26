@@ -104,7 +104,7 @@
 ---
 
 ### (7) 도움말 탭
-<img src="./README_img/help.gif" width="900" />
+<img src="./README_img/스크린샷 2025-12-26 100958.png" width="900" />
 
 - 서비스 이용 가이드 및 전반적인 소개
 
